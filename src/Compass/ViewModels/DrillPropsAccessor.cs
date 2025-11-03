@@ -72,7 +72,7 @@ public class DrillPropsAccessor
         }
 
         var normalized = names.Select(name => name?.Trim() ?? string.Empty).ToList();
-        _viewModel.LoadExistingNames(normalized);
+        _viewModel.LoadExistingNames(normalized, commit: false);
     }
 
     public void ClearDrillProp(int index)

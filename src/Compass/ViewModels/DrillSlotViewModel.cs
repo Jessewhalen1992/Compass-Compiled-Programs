@@ -6,6 +6,7 @@ namespace Compass.ViewModels;
 public class DrillSlotViewModel : INotifyPropertyChanged
 {
     private string _name = string.Empty;
+    private string _committedName = string.Empty;
 
     public DrillSlotViewModel(int index)
     {
@@ -27,6 +28,24 @@ public class DrillSlotViewModel : INotifyPropertyChanged
                 OnPropertyChanged();
             }
         }
+    }
+
+    public string CommittedName
+    {
+        get => _committedName;
+        private set
+        {
+            if (_committedName != value)
+            {
+                _committedName = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public void Commit()
+    {
+        CommittedName = _name;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
