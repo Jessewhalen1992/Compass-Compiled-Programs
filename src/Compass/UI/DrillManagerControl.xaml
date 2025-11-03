@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:models="clr-namespace:Compass.Models"
              mc:Ignorable="d"
              d:DesignWidth="900"
              d:DesignHeight="560">
@@ -318,7 +319,20 @@
                                         BorderThickness="1"
                                         CornerRadius="6"
                                         Padding="10"
-                                        Background="#FFF9FAFB">
+                                        ToolTip="{Binding CheckSummary}">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Background" Value="#FFF9FAFB" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding CheckStatus}" Value="{x:Static models:DrillCheckStatus.Pass}">
+                                                    <Setter Property="Background" Value="#FFE6FFED" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding CheckStatus}" Value="{x:Static models:DrillCheckStatus.Fail}">
+                                                    <Setter Property="Background" Value="#FFFFEAEA" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="2*" />

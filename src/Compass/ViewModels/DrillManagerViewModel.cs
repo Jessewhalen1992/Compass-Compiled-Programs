@@ -388,7 +388,30 @@ public class DrillManagerViewModel : INotifyPropertyChanged
 
     private void RunCheck()
     {
-        _drillCadToolService.Check(GetCurrentDrillNames());
+        var summary = _drillCadToolService.Check(GetCurrentDrillNames());
+        if (!summary.Completed)
+        {
+            return;
+        }
+
+        var updated = new HashSet<int>();
+        foreach (var result in summary.Results)
+        {
+            if (result.Index >= MinimumDrills && result.Index <= Drills.Count)
+            {
+                Drills[result.Index - 1].ApplyCheckResult(result);
+                updated.Add(result.Index);
+            }
+        }
+
+        for (var i = 0; i < Drills.Count; i++)
+        {
+            var slotIndex = i + 1;
+            if (!updated.Contains(slotIndex))
+            {
+                Drills[i].ClearCheckStatus();
+            }
+        }
     }
 
     private void RunHeadingsAll()
