@@ -43,8 +43,8 @@ public class DrillManagerViewModel : INotifyPropertyChanged
         UpdateDrillSlots();
         DrillProps = new DrillPropsAccessor(this);
 
-        _setSelectedCommand = new RelayCommand(_ => SetSelectedDrill(), _ => CanMutateSelectedDrill());
-        _clearSelectedCommand = new RelayCommand(_ => ClearSelectedDrill(), _ => CanMutateSelectedDrill());
+        _setSelectedCommand = new RelayCommand(SetSelectedDrill, CanMutateDrill);
+        _clearSelectedCommand = new RelayCommand(ClearSelectedDrill, CanMutateDrill);
         _setAllCommand = new RelayCommand(_ => SetAllDrills(), _ => DrillCount > 0);
         _clearAllCommand = new RelayCommand(_ => ClearAllDrills(), _ => DrillCount > 0);
         _applyDelimitedCommand = new RelayCommand(_ => ApplyDelimitedNames(), _ => true);
@@ -332,16 +332,59 @@ public class DrillManagerViewModel : INotifyPropertyChanged
         return SelectedDrillIndex >= MinimumDrills && SelectedDrillIndex <= DrillCount;
     }
 
-    private void SetSelectedDrill()
+    private void SetSelectedDrill(object? parameter)
     {
-        DrillProps.SetDrillProp(SelectedDrillIndex, SelectedDrillName);
+        var index = SelectedDrillIndex;
+        if (TryGetIndex(parameter, out var specifiedIndex))
+        {
+            SelectedDrillIndex = specifiedIndex;
+            index = specifiedIndex;
+        }
+
+        DrillProps.SetDrillProp(index, SelectedDrillName);
         RefreshSelectedName();
     }
 
-    private void ClearSelectedDrill()
+    private void ClearSelectedDrill(object? parameter)
     {
-        DrillProps.ClearDrillProp(SelectedDrillIndex);
+        var index = SelectedDrillIndex;
+        if (TryGetIndex(parameter, out var specifiedIndex))
+        {
+            SelectedDrillIndex = specifiedIndex;
+            index = specifiedIndex;
+        }
+
+        DrillProps.ClearDrillProp(index);
         RefreshSelectedName();
+    }
+
+    private bool TryGetIndex(object? parameter, out int index)
+    {
+        switch (parameter)
+        {
+            case DrillSlotViewModel slot:
+                index = slot.Index;
+                return true;
+            case int value:
+                index = value;
+                return true;
+            case string text when int.TryParse(text, out var parsed):
+                index = parsed;
+                return true;
+            default:
+                index = 0;
+                return false;
+        }
+    }
+
+    private bool CanMutateDrill(object? parameter)
+    {
+        if (!TryGetIndex(parameter, out var index))
+        {
+            return CanMutateSelectedDrill();
+        }
+
+        return index >= MinimumDrills && index <= DrillCount;
     }
 
     private void SetAllDrills()
