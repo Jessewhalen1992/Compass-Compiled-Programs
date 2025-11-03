@@ -39,6 +39,8 @@ repository now includes a local package feed in `lib/NuGetPackages` together wit
 (`.nuget/NuGet.Config`). Visual Studio/MSBuild automatically restores packages from this feed and places the expanded contents
 into the solution-local `packages` folder.
 
+The project also enables [`CopyLocalLockFileAssemblies`](https://learn.microsoft.com/dotnet/core/project-sdk/msbuild-props#copylocallockfileassemblies) so that all NuGet dependencies are copied into `bin/<Configuration>` during the build. This ensures the `ILRepack` step can merge third-party libraries into the final `Compass.dll`, preventing missing metadata/runtime dependencies when loading the plug-in into AutoCAD.
+
 If you need to refresh the packages, either delete the `packages` folder and build the solution (NuGet will rehydrate from the
 local feed) or update the packages through Visual Studio's NuGet Package Manager, which will also honor the bundled feed while
 still allowing nuget.org as a fallback.
