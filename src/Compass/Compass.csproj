@@ -2,6 +2,7 @@
   <PropertyGroup>
     <TargetFramework>net48</TargetFramework>
     <UseWPF>true</UseWPF>
+    <OutputType>Library</OutputType>
     <RootNamespace>Compass</RootNamespace>
     <AssemblyName>Compass</AssemblyName>
     <LangVersion>latest</LangVersion>
