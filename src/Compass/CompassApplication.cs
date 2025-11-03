@@ -110,4 +110,18 @@ public class CompassApplication : IExtensionApplication
             module.Show();
         }
     }
+
+    internal static DrillManagerModule GetDrillManagerModule()
+    {
+        EnsureModules();
+
+        var module = ModuleList.OfType<DrillManagerModule>().FirstOrDefault();
+        if (module == null)
+        {
+            module = new DrillManagerModule();
+            RegisterModule(module);
+        }
+
+        return module;
+    }
 }

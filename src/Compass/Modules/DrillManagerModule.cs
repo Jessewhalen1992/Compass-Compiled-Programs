@@ -14,13 +14,16 @@ public class DrillManagerModule : ICompassModule
     public string DisplayName => "Drill Manager";
     public string Description => "Manage drill definitions with support for up to 20 drills.";
 
+    internal DrillManagerControl Control => _control ??= new DrillManagerControl();
+
     public void Show()
     {
+        var control = Control;
+
         if (_paletteSet == null)
         {
-            _control = new DrillManagerControl();
             _paletteSet = CreatePalette();
-            _paletteSet.AddVisual("Drill Manager", _control);
+            _paletteSet.AddVisual("Drill Manager", control);
         }
 
         _paletteSet.Visible = true;

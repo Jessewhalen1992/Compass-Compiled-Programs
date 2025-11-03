@@ -9,6 +9,7 @@
     <Grid Margin="12">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
@@ -23,7 +24,134 @@
             </StackPanel>
         </StackPanel>
 
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+        <StackPanel Grid.Row="1" Margin="0,0,0,12">
+            <GroupBox Header="Set single drill">
+                <Grid Margin="0,4,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="120" />
+                        <ColumnDefinition Width="12" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="8" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Drill" VerticalAlignment="Center" Margin="0,0,8,0" />
+                    <ComboBox Grid.Column="1"
+                              ItemsSource="{Binding Drills}"
+                              SelectedValuePath="Index"
+                              DisplayMemberPath="DisplayLabel"
+                              SelectedValue="{Binding SelectedDrillIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                    <TextBox Grid.Column="3"
+                             Text="{Binding SelectedDrillName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                             VerticalAlignment="Center" />
+                    <Button Grid.Column="4" Content="Set" Padding="12,4" Margin="8,0,0,0" Command="{Binding SetSelectedCommand}" />
+                    <Button Grid.Column="6" Content="Clear" Padding="12,4" Command="{Binding ClearSelectedCommand}" />
+                </Grid>
+            </GroupBox>
+
+            <GroupBox Header="Set all drills" Margin="0,12,0,0">
+                <Grid Margin="0,4,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="8" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBox Text="{Binding SetAllName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                             VerticalAlignment="Center" />
+                    <Button Grid.Column="1" Content="Apply" Padding="12,4" Margin="8,0,0,0" Command="{Binding SetAllCommand}" />
+                    <Button Grid.Column="3" Content="Clear All" Padding="12,4" Command="{Binding ClearAllCommand}" />
+                </Grid>
+            </GroupBox>
+
+            <GroupBox Header="Import / export list" Margin="0,12,0,0">
+                <Grid Margin="0,4,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <StackPanel Orientation="Horizontal" Grid.Row="0" VerticalAlignment="Center">
+                        <TextBlock Text="Separator" VerticalAlignment="Center" Margin="0,0,8,0" />
+                        <TextBox Width="40"
+                                 Text="{Binding DelimitedSeparator, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                 HorizontalContentAlignment="Center" />
+                    </StackPanel>
+                    <TextBox Grid.Row="1"
+                             Margin="0,8,0,0"
+                             MinHeight="60"
+                             AcceptsReturn="True"
+                             TextWrapping="Wrap"
+                             ScrollViewer.VerticalScrollBarVisibility="Auto"
+                             Text="{Binding DelimitedNames, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
+                        <Button Content="Apply" Padding="12,4" Command="{Binding ApplyDelimitedCommand}" />
+                        <Button Content="Copy Current" Padding="12,4" Margin="8,0,0,0" Command="{Binding CopyDelimitedCommand}" />
+                    </StackPanel>
+                </Grid>
+            </GroupBox>
+
+            <GroupBox Header="Corner template" Margin="0,12,0,0">
+                <Grid Margin="0,4,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Row="0" Text="Top left" VerticalAlignment="Center" Margin="0,0,8,0" />
+                    <TextBox Grid.Row="0" Grid.Column="1"
+                             Text="{Binding CornerTopLeft, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                    <TextBlock Grid.Row="1" Text="Top right" VerticalAlignment="Center" Margin="0,8,8,0" />
+                    <TextBox Grid.Row="1" Grid.Column="1" Margin="0,8,0,0"
+                             Text="{Binding CornerTopRight, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                    <TextBlock Grid.Row="2" Text="Bottom right" VerticalAlignment="Center" Margin="0,8,8,0" />
+                    <TextBox Grid.Row="2" Grid.Column="1" Margin="0,8,0,0"
+                             Text="{Binding CornerBottomRight, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                    <TextBlock Grid.Row="3" Text="Bottom left" VerticalAlignment="Center" Margin="0,8,8,0" />
+                    <TextBox Grid.Row="3" Grid.Column="1" Margin="0,8,0,0"
+                             Text="{Binding CornerBottomLeft, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                    <Button Grid.Row="4" Grid.Column="1" Content="Apply Corner Template" Padding="12,4" Margin="0,12,0,0" HorizontalAlignment="Right" Command="{Binding ApplyCornersCommand}" />
+                </Grid>
+            </GroupBox>
+
+            <GroupBox Header="Auto fill empty drills" Margin="0,12,0,0">
+                <Grid Margin="0,4,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Row="0" Text="Prefix" VerticalAlignment="Center" Margin="0,0,8,0" />
+                    <TextBox Grid.Row="0" Grid.Column="1"
+                             Text="{Binding AutoFillPrefix, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                    <TextBlock Grid.Row="1" Text="Start number" VerticalAlignment="Center" Margin="0,8,8,0" />
+                    <TextBox Grid.Row="1" Grid.Column="1" Margin="0,8,0,0"
+                             Text="{Binding AutoFillStartIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                    <Button Grid.Row="2" Grid.Column="1" Content="Fill Empty" Padding="12,4" Margin="0,12,0,0" HorizontalAlignment="Right" Command="{Binding AutoFillCommand}" />
+                </Grid>
+            </GroupBox>
+        </StackPanel>
+
+        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
             <ItemsControl ItemsSource="{Binding Drills}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
