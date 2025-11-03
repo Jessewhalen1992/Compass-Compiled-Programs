@@ -407,11 +407,24 @@ public class DrillManagerViewModel : INotifyPropertyChanged
         var index = SelectedDrillIndex;
         if (TryGetIndex(parameter, out var specifiedIndex))
         {
-            SelectedDrillIndex = specifiedIndex;
             index = specifiedIndex;
         }
 
-        var newName = (SelectedDrillName ?? string.Empty).Trim();
+        var slot = TryGetSlot(index);
+
+        if (SelectedDrillIndex != index)
+        {
+            SelectedDrillIndex = index;
+        }
+        else if (slot != null)
+        {
+            // When setting via the right-hand list, ensure the selected drill name mirrors
+            // the latest edits made directly in the list view textbox.
+            SelectedDrillName = slot.Name;
+        }
+
+        var newNameSource = slot?.Name ?? SelectedDrillName;
+        var newName = (newNameSource ?? string.Empty).Trim();
         var committedName = GetCommittedName(index);
         var result = _drillAttributeSyncService.SetDrillName(index, newName, committedName, updateMatchingValues: true);
         if (!result.Success)
