@@ -115,7 +115,7 @@ public class DrillPropsAccessor
 
     public string ToDelimitedList(char separator = ',')
     {
-        return string.Join(separator, _viewModel.Drills
+        return string.Join(separator.ToString(), _viewModel.Drills
             .Select(slot => slot.Name)
             .Where(name => !string.IsNullOrWhiteSpace(name)));
     }
