@@ -15,6 +15,7 @@
     <AutoCADReferencePath Condition="'$(AutoCADReferencePath)' == '' and Exists('$(ProgramW6432)\\Autodesk\\AutoCAD 2022\\')">$(ProgramW6432)\Autodesk\AutoCAD 2022\</AutoCADReferencePath>
     <AutoCADReferencePath Condition="'$(AutoCADReferencePath)' == '' and Exists('$(ProgramFiles)\\Autodesk\\AutoCAD 2022\\')">$(ProgramFiles)\Autodesk\AutoCAD 2022\</AutoCADReferencePath>
     <AutoCADReferencePath Condition="'$(AutoCADReferencePath)' == '' and Exists('$(MSBuildProgramFiles32)\\Autodesk\\AutoCAD 2022\\')">$(MSBuildProgramFiles32)\Autodesk\AutoCAD 2022\</AutoCADReferencePath>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(AutoCADReferencePath)' != ''">
