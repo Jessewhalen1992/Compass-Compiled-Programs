@@ -111,7 +111,13 @@
 
     <Message Text="Merging assemblies: @(AssembliesToMerge)" Importance="High" />
 
-    <ILRepack Internalize="true" Parallel="true" DebugInfo="true" InputAssemblies="@(AssembliesToMerge)" TargetPlatformVersion="v4" OutputFile="$(MergedAssembly)" />
+    <ILRepack Internalize="true"
+              Parallel="true"
+              DebugInfo="true"
+              InputAssemblies="@(AssembliesToMerge)"
+              TargetPlatformVersion="v4"
+              OutputFile="$(MergedAssembly)"
+              LibraryPath="$(AutoCADReferencePath)" />
 
     <Copy SourceFiles="$(MergedAssembly)" DestinationFiles="$(FinalAssembly)" OverwriteReadOnlyFiles="true" />
     <Delete Files="$(MergedAssembly)" />
