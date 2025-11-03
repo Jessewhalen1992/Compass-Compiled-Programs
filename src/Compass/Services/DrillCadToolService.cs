@@ -16,7 +16,6 @@ using Compass.Infrastructure.Logging;
 using Compass.Models;
 using OfficeOpenXml;
 using Microsoft.Win32;
-using Microsoft.VisualBasic;
 
 using AutoCADApplication = Autodesk.AutoCAD.ApplicationServices.Application;
 
@@ -406,13 +405,6 @@ public class DrillCadToolService
 
     public void AddDrillPoints()
     {
-        var letter = Interaction.InputBox("Enter letter for drill points:", "Add Drill Points", "A");
-        if (string.IsNullOrWhiteSpace(letter))
-        {
-            MessageBox.Show("Letter cannot be empty.", "Add Drill Points", MessageBoxButton.OK, MessageBoxImage.Warning);
-            return;
-        }
-
         var document = AutoCADApplication.DocumentManager.MdiActiveDocument;
         if (document == null)
         {
@@ -421,6 +413,24 @@ public class DrillCadToolService
         }
 
         var editor = document.Editor;
+        var promptOptions = new PromptStringOptions("\nEnter letter for drill points:")
+        {
+            AllowSpaces = false,
+            DefaultValue = "A"
+        };
+        var promptResult = editor.GetString(promptOptions);
+        if (promptResult.Status != PromptStatus.OK)
+        {
+            editor.WriteMessage("\nOperation cancelled.");
+            return;
+        }
+
+        var letter = promptResult.StringResult.Trim();
+        if (string.IsNullOrWhiteSpace(letter))
+        {
+            MessageBox.Show("Letter cannot be empty.", "Add Drill Points", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
         var database = document.Database;
 
         var options = new PromptEntityOptions("\nSelect a polyline:");
