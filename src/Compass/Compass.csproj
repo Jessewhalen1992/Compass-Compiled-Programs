@@ -9,21 +9,27 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <AutoCADReferencePath Condition="'$(AutoCADReferencePath)' == ''">
+      $(MSBuildThisFileDirectory)..\..\lib\AutoCAD2022
+    </AutoCADReferencePath>
+  </PropertyGroup>
+
   <ItemGroup>
-    <Reference Include="accoremgd">
-      <HintPath>..\..\..\..\..\..\Program Files\Autodesk\AutoCAD 2022\accoremgd.dll</HintPath>
+    <Reference Include="AcCoreMgd">
+      <HintPath>$(AutoCADReferencePath)\AcCoreMgd.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Acdbmgd">
-      <HintPath>..\..\..\..\..\..\Program Files\Autodesk\AutoCAD 2022\acdbmgd.dll</HintPath>
+    <Reference Include="AcDbMgd">
+      <HintPath>$(AutoCADReferencePath)\AcDbMgd.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Acmgd">
-      <HintPath>..\..\..\..\..\..\Program Files\Autodesk\AutoCAD 2022\acmgd.dll</HintPath>
+    <Reference Include="AcMgd">
+      <HintPath>$(AutoCADReferencePath)\AcMgd.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="AdWindows">
-      <HintPath>..\..\..\..\..\..\Program Files\Autodesk\AutoCAD 2022\AdWindows.dll</HintPath>
+      <HintPath>$(AutoCADReferencePath)\AdWindows.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="PresentationFramework" />
