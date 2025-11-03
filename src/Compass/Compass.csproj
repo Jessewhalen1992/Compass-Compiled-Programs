@@ -15,25 +15,31 @@
     </AutoCADReferencePath>
   </PropertyGroup>
 
-  <ItemGroup>
-    <Reference Include="accoremgd">
-      <HintPath>..\..\..\..\..\..\Program Files\Autodesk\AutoCAD 2022\accoremgd.dll</HintPath>
-    </Reference>
-    <Reference Include="Acdbmgd">
-      <HintPath>..\..\..\..\..\..\Program Files\Autodesk\AutoCAD 2022\acdbmgd.dll</HintPath>
-    </Reference>
-    <Reference Include="acdbmgdbrep">
-      <HintPath>..\..\..\..\..\..\Program Files\Autodesk\AutoCAD 2022\acdbmgdbrep.dll</HintPath>
-    </Reference>
-    <Reference Include="Acmgd">
-      <HintPath>..\..\..\..\..\..\Program Files\Autodesk\AutoCAD 2022\acmgd.dll</HintPath>
-    </Reference>
-    <Reference Include="AdWindows">
-      <HintPath>..\..\..\..\..\..\Program Files\Autodesk\AutoCAD 2022\AdWindows.dll</HintPath>
-    </Reference>
-    <Reference Include="ManagedMapApi">
-      <HintPath>..\..\..\..\..\..\Program Files\Autodesk\AutoCAD 2022\Map\ManagedMapApi.dll</HintPath>
-    </Reference>
+    <ItemGroup>
+      <Reference Include="accoremgd">
+        <HintPath>$(AutoCADReferencePath)accoremgd.dll</HintPath>
+        <Private>false</Private>
+      </Reference>
+      <Reference Include="Acdbmgd">
+        <HintPath>$(AutoCADReferencePath)acdbmgd.dll</HintPath>
+        <Private>false</Private>
+      </Reference>
+      <Reference Include="acdbmgdbrep">
+        <HintPath>$(AutoCADReferencePath)acdbmgdbrep.dll</HintPath>
+        <Private>false</Private>
+      </Reference>
+      <Reference Include="Acmgd">
+        <HintPath>$(AutoCADReferencePath)acmgd.dll</HintPath>
+        <Private>false</Private>
+      </Reference>
+      <Reference Include="AdWindows">
+        <HintPath>$(AutoCADReferencePath)AdWindows.dll</HintPath>
+        <Private>false</Private>
+      </Reference>
+      <Reference Include="ManagedMapApi">
+        <HintPath>$(AutoCADReferencePath)Map\ManagedMapApi.dll</HintPath>
+        <Private>false</Private>
+      </Reference>
     <Reference Include="PresentationFramework" />
     <Reference Include="PresentationCore" />
     <Reference Include="WindowsBase" />
