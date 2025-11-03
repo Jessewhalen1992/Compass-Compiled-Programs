@@ -28,13 +28,6 @@
     <Reference Include="PresentationCore" />
     <Reference Include="WindowsBase" />
   </ItemGroup>
-
-  <ItemGroup>
-    <Page Include="UI\CompassControl.xaml" />
-    <Page Include="UI\DrillManagerControl.xaml" />
-    <Page Include="UI\ProfileManagerControl.xaml" />
-  </ItemGroup>
-
   <ItemGroup>
     <Compile Update="UI\CompassControl.xaml.cs">
       <DependentUpon>CompassControl.xaml</DependentUpon>
