@@ -1,7 +1,11 @@
 using System;
 using System.Drawing;
 using Autodesk.AutoCAD.Windows;
+using Compass.Infrastructure;
+using Compass.Infrastructure.Logging;
+using Compass.Services;
 using Compass.UI;
+using Compass.ViewModels;
 
 namespace Compass.Modules;
 
@@ -9,16 +13,27 @@ public class DrillManagerModule : ICompassModule
 {
     private PaletteSet? _paletteSet;
     private DrillManagerControl? _control;
+    private readonly JsonSettingsService _settingsService;
+    private readonly ILog _log;
+    private bool _stateLoaded;
 
     public string Id => "drill-manager";
     public string DisplayName => "Drill Manager";
     public string Description => "Manage drill definitions with support for up to 20 drills.";
 
-    internal DrillManagerControl Control => _control ??= new DrillManagerControl();
+    public DrillManagerModule()
+    {
+        CompassEnvironment.Initialize();
+        _log = CompassEnvironment.Log;
+        _settingsService = new JsonSettingsService(CompassEnvironment.AppSettings);
+    }
+
+    internal DrillManagerControl Control => _control ??= CreateControl();
 
     public void Show()
     {
         var control = Control;
+        EnsureStateLoaded(control.ViewModel);
 
         if (_paletteSet == null)
         {
@@ -40,5 +55,50 @@ public class DrillManagerModule : ICompassModule
         };
 
         return palette;
+    }
+
+    private DrillManagerControl CreateControl()
+    {
+        var control = new DrillManagerControl();
+        EnsureStateLoaded(control.ViewModel);
+        return control;
+    }
+
+    private void EnsureStateLoaded(DrillManagerViewModel viewModel)
+    {
+        if (_stateLoaded)
+        {
+            return;
+        }
+
+        try
+        {
+            var state = _settingsService.Load(DrillManagerViewModel.MaximumDrills);
+            viewModel.ApplyState(state);
+            _stateLoaded = true;
+        }
+        catch (Exception ex)
+        {
+            _log.Warn($"Failed to load drill state: {ex.Message}");
+            _stateLoaded = true;
+        }
+    }
+
+    public void SaveState()
+    {
+        if (_control == null)
+        {
+            return;
+        }
+
+        try
+        {
+            var state = _control.ViewModel.CaptureState();
+            _settingsService.Save(state);
+        }
+        catch (Exception ex)
+        {
+            _log.Error("Failed to save drill state", ex);
+        }
     }
 }

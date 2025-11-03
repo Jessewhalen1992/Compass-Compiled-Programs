@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Autodesk.AutoCAD.Runtime;
+using Compass.Models;
 using Compass.Modules;
 using Compass.UI;
 using Compass.ViewModels;
@@ -87,6 +88,16 @@ public static class DrillProps
     public static void Apply(Func<int, string, string?> mutator)
     {
         Control.Apply(mutator);
+    }
+
+    public static void ApplyState(DrillGridState state)
+    {
+        Control.ApplyState(state);
+    }
+
+    public static DrillGridState CaptureState()
+    {
+        return Control.CaptureState();
     }
 
     [CommandMethod("DRILLPROPS", CommandFlags.Modal | CommandFlags.Session)]
@@ -413,5 +424,10 @@ public static class DrillProps
     public static void SetDrillProp20(string? value)
     {
         Control.SetDrillProp20(value);
+    }
+
+    public static void SaveState()
+    {
+        Module.SaveState();
     }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Autodesk.AutoCAD.Runtime;
 using Autodesk.AutoCAD.Windows;
+using Compass.Infrastructure;
 using Compass.Modules;
 using Compass.UI;
 using Compass.ViewModels;
@@ -20,11 +21,21 @@ public class CompassApplication : IExtensionApplication
 
     public void Initialize()
     {
+        CompassEnvironment.Initialize();
         EnsureModules();
     }
 
     public void Terminate()
     {
+        try
+        {
+            GetDrillManagerModule().SaveState();
+        }
+        catch (Exception)
+        {
+            // ignore shutdown failures
+        }
+
         if (_compassPalette != null)
         {
             _compassPalette.Visible = false;

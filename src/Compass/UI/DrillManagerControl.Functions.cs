@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Compass.Models;
 
 namespace Compass.UI;
 
@@ -79,6 +80,16 @@ public partial class DrillManagerControl
     public void Apply(Func<int, string, string?> mutator)
     {
         DrillProps.Apply(mutator);
+    }
+
+    public void ApplyState(DrillGridState state)
+    {
+        ViewModel.ApplyState(state);
+    }
+
+    public DrillGridState CaptureState()
+    {
+        return ViewModel.CaptureState();
     }
 
     public string DrillProp1
