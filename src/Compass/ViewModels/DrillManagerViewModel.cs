@@ -19,11 +19,14 @@ public class DrillManagerViewModel : INotifyPropertyChanged
         Drills = new ObservableCollection<DrillSlotViewModel>();
         DrillCountOptions = Enumerable.Range(MinimumDrills, MaximumDrills - MinimumDrills + 1).ToList();
         UpdateDrillSlots();
+        DrillProps = new DrillPropsAccessor(this);
     }
 
     public ObservableCollection<DrillSlotViewModel> Drills { get; }
 
     public IReadOnlyList<int> DrillCountOptions { get; }
+
+    public DrillPropsAccessor DrillProps { get; }
 
     public int DrillCount
     {
@@ -50,6 +53,36 @@ public class DrillManagerViewModel : INotifyPropertyChanged
         {
             Drills[i].Name = i < nameList.Count ? nameList[i] : string.Empty;
         }
+    }
+
+    internal DrillSlotViewModel EnsureSlot(int index)
+    {
+        if (index < MinimumDrills || index > MaximumDrills)
+        {
+            throw new ArgumentOutOfRangeException(nameof(index), index, $"Index must be between {MinimumDrills} and {MaximumDrills}.");
+        }
+
+        if (_drillCount < index)
+        {
+            DrillCount = index;
+        }
+
+        return Drills[index - 1];
+    }
+
+    internal DrillSlotViewModel? TryGetSlot(int index)
+    {
+        if (index < MinimumDrills || index > MaximumDrills)
+        {
+            return null;
+        }
+
+        if (index > Drills.Count)
+        {
+            return null;
+        }
+
+        return Drills[index - 1];
     }
 
     private void UpdateDrillSlots()
