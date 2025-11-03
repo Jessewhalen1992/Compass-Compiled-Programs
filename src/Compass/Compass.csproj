@@ -38,6 +38,9 @@
     <PackageReference Include="NLog" Version="5.2.8" />
     <PackageReference Include="EPPlus" Version="6.2.3" />
     <PackageReference Include="System.Text.Encoding.CodePages" Version="6.0.0" />
+    <PackageReference Include="ILRepack.Lib.MSBuild.Task" Version="2.0.18">
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
   </ItemGroup>
   <ItemGroup>
     <Compile Update="UI\CompassControl.xaml.cs">
@@ -63,5 +66,34 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
+
+  <Target Name="RepackDependencies" AfterTargets="Build" Condition="'$(DesignTimeBuild)' != 'true'">
+    <PropertyGroup>
+      <MergedAssembly>$(OutputPath)$(AssemblyName).merged.dll</MergedAssembly>
+      <FinalAssembly>$(OutputPath)$(AssemblyName).dll</FinalAssembly>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <AssembliesToMerge Include="$(FinalAssembly)" />
+      <AssembliesToMerge Include="@(ReferenceCopyLocalPaths)"
+                         Condition="'%(ReferenceCopyLocalPaths.Extension)' == '.dll'" />
+      <AssembliesToDelete Include="@(ReferenceCopyLocalPaths)"
+                          Condition="'%(ReferenceCopyLocalPaths.Extension)' == '.dll'" />
+    </ItemGroup>
+
+    <Message Text="Merging assemblies: @(AssembliesToMerge)" Importance="High" />
+
+    <ILRepack Internalize="true"
+              Parallel="true"
+              DebugInfo="true"
+              InputAssemblies="@(AssembliesToMerge)"
+              TargetPlatformVersion="v4"
+              OutputFile="$(MergedAssembly)" />
+
+    <Copy SourceFiles="$(MergedAssembly)" DestinationFiles="$(FinalAssembly)" OverwriteReadOnlyFiles="true" />
+    <Delete Files="$(MergedAssembly)" />
+
+    <Delete Files="@(AssembliesToDelete)" />
+  </Target>
 
 </Project>
