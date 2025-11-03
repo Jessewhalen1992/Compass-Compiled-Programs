@@ -84,51 +84,90 @@
                                           Margin="0,0,0,8" />
                                 <TextBox Text="{Binding SelectedDrillName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                          Margin="0,0,0,12" />
-                                <UniformGrid Columns="2" HorizontalAlignment="Right" Margin="0">
-                                    <Button Content="Set"
-                                            Margin="0,0,8,0"
+                                <Grid HorizontalAlignment="Right">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <Button Grid.Row="0"
+                                            Grid.Column="0"
+                                            Content="Set"
+                                            Margin="0,0,12,0"
                                             Padding="12,4"
-                                            MinWidth="80"
+                                            MinWidth="90"
                                             Command="{Binding SetSelectedCommand}" />
-                                    <Button Content="Clear"
+                                    <Button Grid.Row="1"
+                                            Grid.Column="0"
+                                            Content="Set all"
+                                            Margin="0,8,12,0"
                                             Padding="12,4"
-                                            MinWidth="80"
+                                            MinWidth="90"
+                                            Command="{Binding SetAllCommand}" />
+                                    <Button Grid.Row="0"
+                                            Grid.Column="1"
+                                            Content="Clear"
+                                            Padding="12,4"
+                                            MinWidth="90"
                                             Command="{Binding ClearSelectedCommand}" />
-                                </UniformGrid>
+                                    <Button Grid.Row="1"
+                                            Grid.Column="1"
+                                            Content="Clear all"
+                                            Margin="0,8,0,0"
+                                            Padding="12,4"
+                                            MinWidth="90"
+                                            Command="{Binding ClearAllCommand}" />
+                                </Grid>
                             </StackPanel>
                         </Border>
 
-                    <Border Background="White"
-                            BorderBrush="#FFE3E8EF"
-                            BorderThickness="1"
-                            CornerRadius="8"
-                            Padding="16"
-                            Margin="0,0,0,12">
-                        <StackPanel>
-                            <TextBlock Text="Bulk naming"
-                                       FontSize="14"
-                                       FontWeight="SemiBold"
-                                       Foreground="#FF111827" />
-                            <TextBlock Text="Apply a shared name or clear every drill at once."
-                                       FontSize="12"
-                                       Foreground="#FF6B7280"
-                                       Margin="0,4,0,12" />
-                            <TextBox Text="{Binding SetAllName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                     Margin="0,0,0,12"
-                                     ToolTip="Name that will be assigned to every drill when you apply the change." />
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                <Button Content="Apply to all"
-                                        Padding="12,4"
-                                        MinWidth="110"
-                                        Command="{Binding SetAllCommand}" />
-                                <Button Content="Clear all"
-                                        Padding="12,4"
-                                        MinWidth="110"
-                                        Margin="8,0,0,0"
-                                        Command="{Binding ClearAllCommand}" />
+                        <Border Background="White"
+                                BorderBrush="#FFE3E8EF"
+                                BorderThickness="1"
+                                CornerRadius="8"
+                                Padding="16"
+                                Margin="0,0,0,12">
+                            <StackPanel>
+                                <TextBlock Text="Swap drills"
+                                           FontSize="14"
+                                           FontWeight="SemiBold"
+                                           Foreground="#FF111827" />
+                                <TextBlock Text="Choose two drills and swap their names to quickly re-order the list."
+                                           FontSize="12"
+                                           Foreground="#FF6B7280"
+                                           Margin="0,4,0,12" />
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <ComboBox Grid.Column="0"
+                                              ItemsSource="{Binding Drills}"
+                                              DisplayMemberPath="DisplayLabel"
+                                              SelectedValuePath="Index"
+                                              SelectedValue="{Binding SwapFirstIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              Margin="0,0,12,0" />
+                                    <ComboBox Grid.Column="1"
+                                              ItemsSource="{Binding Drills}"
+                                              DisplayMemberPath="DisplayLabel"
+                                              SelectedValuePath="Index"
+                                              SelectedValue="{Binding SwapSecondIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              Margin="0,0,12,0" />
+                                    <Button Grid.Column="2"
+                                            Content="Swap"
+                                            Padding="12,4"
+                                            MinWidth="90"
+                                            Command="{Binding SwapCommand}" />
+                                </Grid>
                             </StackPanel>
-                        </StackPanel>
-                    </Border>
+                        </Border>
 
                     <Border Background="White"
                             BorderBrush="#FFE3E8EF"
