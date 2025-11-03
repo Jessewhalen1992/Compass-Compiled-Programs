@@ -275,9 +275,9 @@
 
                     <Grid Grid.Row="0" Margin="0,0,0,12">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="140" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="140" />
+                            <ColumnDefinition Width="2*" />
+                            <ColumnDefinition Width="2*" />
+                            <ColumnDefinition Width="Auto" MinWidth="140" />
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="Drill label"
                                    FontSize="13"
@@ -321,9 +321,9 @@
                                         Background="#FFF9FAFB">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="140" />
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="140" />
+                                            <ColumnDefinition Width="2*" />
+                                            <ColumnDefinition Width="2*" />
+                                            <ColumnDefinition Width="Auto" MinWidth="140" />
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Text="{Binding DisplayLabel}"
                                                    VerticalAlignment="Center"
