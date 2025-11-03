@@ -9,59 +9,14 @@
 		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
 	</PropertyGroup>
 
-	<!-- ===== QUICK OVERRIDE (edit this path if yours differs) ===== -->
-	<PropertyGroup>
-		<!-- Set to your installed product root. Examples:
-         C:\Program Files\Autodesk\Autodesk AutoCAD Map 3D 2025
-         C:\Program Files\Autodesk\AutoCAD 2022
-         C:\Program Files\Autodesk\Autodesk Civil 3D 2024 -->
-		<AutoCADReferencePath Condition="'$(AutoCADReferencePath)' == ''">
-			C:\Program Files\Autodesk\Autodesk AutoCAD Map 3D 2025
-		</AutoCADReferencePath>
-	</PropertyGroup>
-	<!-- =========================================================== -->
-
-	<!-- Resolve AutoCAD / Map 3D / Civil 3D roots (env var + common installs) -->
-	<PropertyGroup>
-		<AutoCADReferencePath Condition="'$(AUTOCAD_2022)' != ''">
-			$([System.IO.Path]::GetFullPath('$(AUTOCAD_2022)'))
-		</AutoCADReferencePath>
-
-		<!-- repo-local cache -->
-		<AutoCADReferencePath Condition="Exists('$(MSBuildThisFileDirectory)..\\..\\lib\\AutoCAD2022\\')">
-			$(MSBuildThisFileDirectory)..\..\lib\AutoCAD2022\
-		</AutoCADReferencePath>
-
-		<!-- AutoCAD vanilla -->
-		<AutoCADReferencePath Condition="Exists('$(ProgramW6432)\\Autodesk\\AutoCAD 2025\\')">$(ProgramW6432)\Autodesk\AutoCAD 2025\</AutoCADReferencePath>
-		<AutoCADReferencePath Condition="Exists('$(ProgramFiles)\\Autodesk\\AutoCAD 2025\\')">$(ProgramFiles)\Autodesk\AutoCAD 2025\</AutoCADReferencePath>
-		<AutoCADReferencePath Condition="Exists('$(ProgramW6432)\\Autodesk\\AutoCAD 2024\\')">$(ProgramW6432)\Autodesk\AutoCAD 2024\</AutoCADReferencePath>
-		<AutoCADReferencePath Condition="Exists('$(ProgramFiles)\\Autodesk\\AutoCAD 2024\\')">$(ProgramFiles)\Autodesk\AutoCAD 2024\</AutoCADReferencePath>
-		<AutoCADReferencePath Condition="Exists('$(ProgramW6432)\\Autodesk\\AutoCAD 2023\\')">$(ProgramW6432)\Autodesk\AutoCAD 2023\</AutoCADReferencePath>
-		<AutoCADReferencePath Condition="Exists('$(ProgramFiles)\\Autodesk\\AutoCAD 2023\\')">$(ProgramFiles)\Autodesk\AutoCAD 2023\</AutoCADReferencePath>
-		<AutoCADReferencePath Condition="Exists('$(ProgramW6432)\\Autodesk\\AutoCAD 2022\\')">$(ProgramW6432)\Autodesk\AutoCAD 2022\</AutoCADReferencePath>
-		<AutoCADReferencePath Condition="Exists('$(ProgramFiles)\\Autodesk\\AutoCAD 2022\\')">$(ProgramFiles)\Autodesk\AutoCAD 2022\</AutoCADReferencePath>
-
-		<!-- Map 3D -->
-		<AutoCADReferencePath Condition="Exists('$(ProgramW6432)\\Autodesk\\Autodesk AutoCAD Map 3D 2025\\')">$(ProgramW6432)\Autodesk\Autodesk AutoCAD Map 3D 2025\</AutoCADReferencePath>
-		<AutoCADReferencePath Condition="Exists('$(ProgramFiles)\\Autodesk\\Autodesk AutoCAD Map 3D 2025\\')">$(ProgramFiles)\Autodesk\Autodesk AutoCAD Map 3D 2025\</AutoCADReferencePath>
-		<AutoCADReferencePath Condition="Exists('$(ProgramW6432)\\Autodesk\\Autodesk AutoCAD Map 3D 2024\\')">$(ProgramW6432)\Autodesk\Autodesk AutoCAD Map 3D 2024\</AutoCADReferencePath>
-		<AutoCADReferencePath Condition="Exists('$(ProgramFiles)\\Autodesk\\Autodesk AutoCAD Map 3D 2024\\')">$(ProgramFiles)\Autodesk\Autodesk AutoCAD Map 3D 2024\</AutoCADReferencePath>
-		<AutoCADReferencePath Condition="Exists('$(ProgramW6432)\\Autodesk\\Autodesk AutoCAD Map 3D 2023\\')">$(ProgramW6432)\Autodesk\Autodesk AutoCAD Map 3D 2023\</AutoCADReferencePath>
-		<AutoCADReferencePath Condition="Exists('$(ProgramFiles)\\Autodesk\\Autodesk AutoCAD Map 3D 2023\\')">$(ProgramFiles)\Autodesk\Autodesk AutoCAD Map 3D 2023\</AutoCADReferencePath>
-		<AutoCADReferencePath Condition="Exists('$(ProgramW6432)\\Autodesk\\Autodesk AutoCAD Map 3D 2022\\')">$(ProgramW6432)\Autodesk\Autodesk AutoCAD Map 3D 2022\</AutoCADReferencePath>
-		<AutoCADReferencePath Condition="Exists('$(ProgramFiles)\\Autodesk\\Autodesk AutoCAD Map 3D 2022\\')">$(ProgramFiles)\Autodesk\Autodesk AutoCAD Map 3D 2022\</AutoCADReferencePath>
-
-		<!-- Civil 3D -->
-		<AutoCADReferencePath Condition="Exists('$(ProgramW6432)\\Autodesk\\Autodesk Civil 3D 2025\\')">$(ProgramW6432)\Autodesk\Autodesk Civil 3D 2025\</AutoCADReferencePath>
-		<AutoCADReferencePath Condition="Exists('$(ProgramFiles)\\Autodesk\\Autodesk Civil 3D 2025\\')">$(ProgramFiles)\Autodesk\Autodesk Civil 3D 2025\</AutoCADReferencePath>
-		<AutoCADReferencePath Condition="Exists('$(ProgramW6432)\\Autodesk\\Autodesk Civil 3D 2024\\')">$(ProgramW6432)\Autodesk\Autodesk Civil 3D 2024\</AutoCADReferencePath>
-		<AutoCADReferencePath Condition="Exists('$(ProgramFiles)\\Autodesk\\Autodesk Civil 3D 2024\\')">$(ProgramFiles)\Autodesk\Autodesk Civil 3D 2024\</AutoCADReferencePath>
-		<AutoCADReferencePath Condition="Exists('$(ProgramW6432)\\Autodesk\\Autodesk Civil 3D 2023\\')">$(ProgramW6432)\Autodesk\Autodesk Civil 3D 2023\</AutoCADReferencePath>
-		<AutoCADReferencePath Condition="Exists('$(ProgramFiles)\\Autodesk\\Autodesk Civil 3D 2023\\')">$(ProgramFiles)\Autodesk\Autodesk Civil 3D 2023\</AutoCADReferencePath>
-		<AutoCADReferencePath Condition="Exists('$(ProgramW6432)\\Autodesk\\Autodesk Civil 3D 2022\\')">$(ProgramW6432)\Autodesk\Autodesk Civil 3D 2022\</AutoCADReferencePath>
-		<AutoCADReferencePath Condition="Exists('$(ProgramFiles)\\Autodesk\\Autodesk Civil 3D 2022\\')">$(ProgramFiles)\Autodesk\Autodesk Civil 3D 2022\</AutoCADReferencePath>
-	</PropertyGroup>
+  <PropertyGroup>
+    <AutoCADReferencePath Condition="'$(AutoCADReferencePath)' == '' and '$(AUTOCAD_2022)' != ''">$([System.IO.Path]::GetFullPath('$(AUTOCAD_2022)'))</AutoCADReferencePath>
+    <AutoCADReferencePath Condition="'$(AutoCADReferencePath)' == '' and Exists('$(MSBuildThisFileDirectory)..\\..\\lib\\AutoCAD2022\\')">$(MSBuildThisFileDirectory)..\..\lib\AutoCAD2022\</AutoCADReferencePath>
+    <AutoCADReferencePath Condition="'$(AutoCADReferencePath)' == '' and Exists('$(ProgramW6432)\\Autodesk\\AutoCAD 2022\\')">$(ProgramW6432)\Autodesk\AutoCAD 2022\</AutoCADReferencePath>
+    <AutoCADReferencePath Condition="'$(AutoCADReferencePath)' == '' and Exists('$(ProgramFiles)\\Autodesk\\AutoCAD 2022\\')">$(ProgramFiles)\Autodesk\AutoCAD 2022\</AutoCADReferencePath>
+    <AutoCADReferencePath Condition="'$(AutoCADReferencePath)' == '' and Exists('$(MSBuildProgramFiles32)\\Autodesk\\AutoCAD 2022\\')">$(MSBuildProgramFiles32)\Autodesk\AutoCAD 2022\</AutoCADReferencePath>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
 
 	<PropertyGroup>
 		<AutoCADReferencePath>$([System.String]::Copy('$(AutoCADReferencePath)').TrimEnd('\\'))</AutoCADReferencePath>
