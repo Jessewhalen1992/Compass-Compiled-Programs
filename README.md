@@ -14,7 +14,15 @@ The `Compass` project is a class library that references the AutoCAD 2022 manage
 
 ## AutoCAD Dependencies
 
-Copy the following files from an AutoCAD 2022 installation into `lib/AutoCAD2022` before building the solution:
+By default the project tries to locate the AutoCAD managed assemblies in the following locations (in order):
+
+1. The value of the `AUTOCAD_2022` environment variable, if set.
+2. `lib/AutoCAD2022` within the repository.
+3. `%ProgramW6432%\Autodesk\AutoCAD 2022\`
+4. `%ProgramFiles%\Autodesk\AutoCAD 2022\`
+5. `%ProgramFiles(x86)%\Autodesk\AutoCAD 2022\`
+
+You can therefore either install AutoCAD 2022 to its default location or point `AUTOCAD_2022` at a custom installation directory. If none of these paths are available, copy the dependencies into `lib/AutoCAD2022` before building the solution:
 
 - `AcDbMgd.dll`
 - `AcMgd.dll`
