@@ -30,7 +30,11 @@ public class DrillCadToolService
     private const string OffsetsLayer = "P-Drill-Offset";
     private const string HorizontalLayer = "L-SEC-HB";
     private const string CordsDirectory = @"C:\\CORDS";
-    private const string CordsExecutablePath = @"C:\\AUTOCAD-SETUP CG\\CG_LISP\\cords.exe";
+    private static readonly string[] CordsExecutableSearchPaths =
+    {
+        @"C:\\AUTOCAD-SETUP CG\\CG_LISP\\COMPASS\\cord.exe",
+        @"C:\\AUTOCAD-SETUP\\Lisp_2000\\DRILL PROPERTIES\\cord.exe"
+    };
 
     private readonly ILog _log;
     private readonly LayerService _layerService;
@@ -1259,8 +1263,8 @@ public class DrillCadToolService
             return string.Empty;
         }
 
-        var processExe = CordsExecutablePath;
-        if (File.Exists(processExe))
+        var processExe = FindCordsExecutable();
+        if (!string.IsNullOrEmpty(processExe))
         {
             _log.Info($"Running: {processExe} \"{csvPath}\" \"{heading}\"");
             var startInfo = new ProcessStartInfo(processExe, $"\"{csvPath}\" \"{heading}\"")
@@ -1277,7 +1281,7 @@ public class DrillCadToolService
             {
                 if (process == null)
                 {
-                    ShowAlert("Failed to start cords.exe.");
+                    ShowAlert("Failed to start cord.exe.");
                     return string.Empty;
                 }
 
@@ -1292,8 +1296,8 @@ public class DrillCadToolService
                         // ignore
                     }
 
-                    _log.Error("cords.exe timeout");
-                    ShowAlert("cords.exe did not exit in time.");
+                    _log.Error("cord.exe timeout");
+                    ShowAlert("cord.exe did not exit in time.");
                     return string.Empty;
                 }
 
@@ -1311,15 +1315,16 @@ public class DrillCadToolService
 
                 if (process.ExitCode != 0)
                 {
-                    _log.Error($"cords.exe exited with {process.ExitCode}");
-                    ShowAlert($"cords.exe exited with {process.ExitCode}");
+                    _log.Error($"cord.exe exited with {process.ExitCode}");
+                    ShowAlert($"cord.exe exited with {process.ExitCode}");
                     return string.Empty;
                 }
             }
         }
         else
         {
-            _log.Warn("cords.exe not found, skipping.");
+            _log.Warn("cord.exe not found in any expected location, skipping.");
+            ShowAlert("cord.exe not found in the expected locations.");
         }
 
         var excelPath = Path.Combine(Path.GetDirectoryName(csvPath) ?? CordsDirectory, "ExportedCoordsFormatted.xlsx");
@@ -1330,6 +1335,19 @@ public class DrillCadToolService
         }
 
         return excelPath;
+    }
+
+    private static string? FindCordsExecutable()
+    {
+        foreach (var path in CordsExecutableSearchPaths)
+        {
+            if (File.Exists(path))
+            {
+                return path;
+            }
+        }
+
+        return null;
     }
 
     private static string[,]? ReadExcel(string excelFilePath)
