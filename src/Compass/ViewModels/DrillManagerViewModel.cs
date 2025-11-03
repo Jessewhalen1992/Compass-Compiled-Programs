@@ -20,11 +20,12 @@ public class DrillManagerViewModel : INotifyPropertyChanged
     private int _drillCount = 12;
     private int _selectedDrillIndex = 1;
     private string _selectedDrillName = string.Empty;
-    private string _setAllName = string.Empty;
     private string _delimitedNames = string.Empty;
     private string _delimitedSeparator = ",";
     private string _autoFillPrefix = "DRILL ";
     private int _autoFillStartIndex = 1;
+    private int _swapFirstIndex = MinimumDrills;
+    private int _swapSecondIndex = MinimumDrills + 1;
 
     private readonly WellCornerTableService _wellCornerTableService;
     private readonly DrillAttributeSyncService _drillAttributeSyncService;
@@ -38,6 +39,7 @@ public class DrillManagerViewModel : INotifyPropertyChanged
     private readonly RelayCommand _updateFromBlockAttributesCommand;
     private readonly RelayCommand _createWellCornersTableCommand;
     private readonly RelayCommand _autoFillCommand;
+    private readonly RelayCommand _swapCommand;
 
     public DrillManagerViewModel()
     {
@@ -51,6 +53,9 @@ public class DrillManagerViewModel : INotifyPropertyChanged
         UpdateDrillSlots();
         DrillProps = new DrillPropsAccessor(this);
 
+        _swapFirstIndex = MinimumDrills;
+        _swapSecondIndex = Math.Min(MinimumDrills + 1, DrillCount);
+
         _setSelectedCommand = new RelayCommand(SetSelectedDrill, CanMutateDrill);
         _clearSelectedCommand = new RelayCommand(ClearSelectedDrill, CanMutateDrill);
         _setAllCommand = new RelayCommand(_ => SetAllDrills(), _ => DrillCount > 0);
@@ -60,8 +65,11 @@ public class DrillManagerViewModel : INotifyPropertyChanged
         _updateFromBlockAttributesCommand = new RelayCommand(_ => UpdateFromBlockAttributes(), _ => DrillCount > 0);
         _createWellCornersTableCommand = new RelayCommand(_ => CreateWellCornersTable());
         _autoFillCommand = new RelayCommand(_ => AutoFillEmpty(), _ => DrillCount > 0);
+        _swapCommand = new RelayCommand(_ => SwapDrills(), _ => CanSwap());
 
         SelectedDrillIndex = 1;
+        OnPropertyChanged(nameof(SwapFirstIndex));
+        OnPropertyChanged(nameof(SwapSecondIndex));
     }
 
     public ObservableCollection<DrillSlotViewModel> Drills { get; }
@@ -79,6 +87,7 @@ public class DrillManagerViewModel : INotifyPropertyChanged
     public ICommand UpdateFromBlockAttributesCommand => _updateFromBlockAttributesCommand;
     public ICommand CreateWellCornersTableCommand => _createWellCornersTableCommand;
     public ICommand AutoFillCommand => _autoFillCommand;
+    public ICommand SwapCommand => _swapCommand;
 
     public int DrillCount
     {
@@ -92,6 +101,7 @@ public class DrillManagerViewModel : INotifyPropertyChanged
                 OnPropertyChanged();
                 UpdateDrillSlots();
                 EnsureSelectedIndexInRange();
+                EnsureSwapIndexesInRange();
                 RefreshCommandStates();
             }
         }
@@ -127,15 +137,34 @@ public class DrillManagerViewModel : INotifyPropertyChanged
         }
     }
 
-    public string SetAllName
+    public int SwapFirstIndex
     {
-        get => _setAllName;
+        get => _swapFirstIndex;
         set
         {
-            if (_setAllName != value)
+            var maxAllowed = Math.Max(MinimumDrills, Math.Min(MaximumDrills, DrillCount));
+            var newValue = Math.Max(MinimumDrills, Math.Min(maxAllowed, value));
+            if (_swapFirstIndex != newValue)
             {
-                _setAllName = value ?? string.Empty;
+                _swapFirstIndex = newValue;
                 OnPropertyChanged();
+                RefreshCommandStates();
+            }
+        }
+    }
+
+    public int SwapSecondIndex
+    {
+        get => _swapSecondIndex;
+        set
+        {
+            var maxAllowed = Math.Max(MinimumDrills, Math.Min(MaximumDrills, DrillCount));
+            var newValue = Math.Max(MinimumDrills, Math.Min(maxAllowed, value));
+            if (_swapSecondIndex != newValue)
+            {
+                _swapSecondIndex = newValue;
+                OnPropertyChanged();
+                RefreshCommandStates();
             }
         }
     }
@@ -347,10 +376,11 @@ public class DrillManagerViewModel : INotifyPropertyChanged
 
     private void SetAllDrills()
     {
-        var value = SetAllName ?? string.Empty;
+        var value = SelectedDrillName ?? string.Empty;
         var values = Enumerable.Repeat(value, DrillCount);
         DrillProps.SetDrillProps(values);
         RefreshSelectedName();
+        RefreshCommandStates();
     }
 
     private void ClearAllDrills()
@@ -415,6 +445,82 @@ public class DrillManagerViewModel : INotifyPropertyChanged
         }
     }
 
+    private void SwapDrills()
+    {
+        if (!CanSwap())
+        {
+            return;
+        }
+
+        var firstValue = DrillProps.GetDrillProp(SwapFirstIndex);
+        var secondValue = DrillProps.GetDrillProp(SwapSecondIndex);
+
+        DrillProps.SetDrillProp(SwapFirstIndex, secondValue);
+        DrillProps.SetDrillProp(SwapSecondIndex, firstValue);
+
+        RefreshSelectedName();
+        RefreshCommandStates();
+    }
+
+    private bool CanSwap()
+    {
+        if (DrillCount <= 1)
+        {
+            return false;
+        }
+
+        var maxAllowed = Math.Max(MinimumDrills, Math.Min(MaximumDrills, DrillCount));
+        if (SwapFirstIndex < MinimumDrills || SwapFirstIndex > maxAllowed)
+        {
+            return false;
+        }
+
+        if (SwapSecondIndex < MinimumDrills || SwapSecondIndex > maxAllowed)
+        {
+            return false;
+        }
+
+        return SwapFirstIndex != SwapSecondIndex;
+    }
+
+    private void EnsureSwapIndexesInRange()
+    {
+        var maxAllowed = Math.Max(MinimumDrills, Math.Min(MaximumDrills, DrillCount));
+
+        if (_swapFirstIndex < MinimumDrills)
+        {
+            _swapFirstIndex = MinimumDrills;
+        }
+        else if (_swapFirstIndex > maxAllowed)
+        {
+            _swapFirstIndex = maxAllowed;
+        }
+
+        if (_swapSecondIndex < MinimumDrills)
+        {
+            _swapSecondIndex = Math.Min(maxAllowed, MinimumDrills + 1);
+        }
+        else if (_swapSecondIndex > maxAllowed)
+        {
+            _swapSecondIndex = maxAllowed;
+        }
+
+        if (_swapFirstIndex == _swapSecondIndex && maxAllowed > MinimumDrills)
+        {
+            if (_swapSecondIndex < maxAllowed)
+            {
+                _swapSecondIndex++;
+            }
+            else if (_swapFirstIndex > MinimumDrills)
+            {
+                _swapFirstIndex--;
+            }
+        }
+
+        OnPropertyChanged(nameof(SwapFirstIndex));
+        OnPropertyChanged(nameof(SwapSecondIndex));
+    }
+
     private void EnsureSelectedIndexInRange()
     {
         if (_selectedDrillIndex > _drillCount)
@@ -440,6 +546,7 @@ public class DrillManagerViewModel : INotifyPropertyChanged
         _copyDelimitedCommand.RaiseCanExecuteChanged();
         _updateFromBlockAttributesCommand.RaiseCanExecuteChanged();
         _autoFillCommand.RaiseCanExecuteChanged();
+        _swapCommand.RaiseCanExecuteChanged();
     }
 
     protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
