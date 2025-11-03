@@ -66,6 +66,9 @@ public class DrillManagerModule : ICompassModule
 
     private void EnsureStateLoaded(DrillManagerViewModel viewModel)
     {
+        viewModel.StateChanged -= OnViewModelStateChanged;
+        viewModel.StateChanged += OnViewModelStateChanged;
+
         if (_stateLoaded)
         {
             return;
@@ -94,6 +97,24 @@ public class DrillManagerModule : ICompassModule
         try
         {
             var state = _control.ViewModel.CaptureState();
+            _settingsService.Save(state);
+        }
+        catch (Exception ex)
+        {
+            _log.Error("Failed to save drill state", ex);
+        }
+    }
+
+    private void OnViewModelStateChanged(object? sender, EventArgs e)
+    {
+        if (sender is not DrillManagerViewModel viewModel)
+        {
+            return;
+        }
+
+        try
+        {
+            var state = viewModel.CaptureState();
             _settingsService.Save(state);
         }
         catch (Exception ex)

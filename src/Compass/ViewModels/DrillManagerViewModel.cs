@@ -32,6 +32,8 @@ public class DrillManagerViewModel : INotifyPropertyChanged
     private readonly DrillCadToolService _drillCadToolService;
     private readonly string[] _committedNames = new string[MaximumDrills];
     private static readonly string[] HeadingChoices = { "ICP", "HEEL" };
+    private int _stateChangeSuppressionCount;
+    private bool _stateChangePending;
 
     private readonly RelayCommand _setSelectedCommand;
     private readonly RelayCommand _clearSelectedCommand;
@@ -128,6 +130,7 @@ public class DrillManagerViewModel : INotifyPropertyChanged
             {
                 _heading = normalized;
                 OnPropertyChanged();
+                RaiseStateChanged();
             }
         }
     }
@@ -154,6 +157,7 @@ public class DrillManagerViewModel : INotifyPropertyChanged
                 EnsureSelectedIndexInRange();
                 EnsureSwapIndexesInRange();
                 RefreshCommandStates();
+                RaiseStateChanged();
             }
         }
     }
@@ -275,6 +279,7 @@ public class DrillManagerViewModel : INotifyPropertyChanged
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
+    public event EventHandler? StateChanged;
 
     public void LoadExistingNames(IEnumerable<string> names, bool commit = true)
     {
@@ -312,8 +317,16 @@ public class DrillManagerViewModel : INotifyPropertyChanged
             names = Enumerable.Range(1, DrillCount).Select(index => $"DRILL_{index}").ToList();
         }
 
-        Heading = NormalizeHeading(state.Heading);
-        LoadExistingNames(names);
+        _stateChangeSuppressionCount++;
+        try
+        {
+            Heading = NormalizeHeading(state.Heading);
+            LoadExistingNames(names);
+        }
+        finally
+        {
+            ResumeStateNotifications(skipPendingRaise: true);
+        }
     }
 
     public DrillGridState CaptureState()
@@ -364,6 +377,7 @@ public class DrillManagerViewModel : INotifyPropertyChanged
             for (var i = Drills.Count + 1; i <= _drillCount; i++)
             {
                 var slot = new DrillSlotViewModel(i);
+                slot.PropertyChanged += OnSlotPropertyChanged;
                 Drills.Add(slot);
                 slot.Commit();
                 SetCommittedName(i, slot.Name);
@@ -373,7 +387,10 @@ public class DrillManagerViewModel : INotifyPropertyChanged
         {
             while (Drills.Count > _drillCount)
             {
-                Drills.RemoveAt(Drills.Count - 1);
+                var index = Drills.Count - 1;
+                var slot = Drills[index];
+                slot.PropertyChanged -= OnSlotPropertyChanged;
+                Drills.RemoveAt(index);
             }
         }
 
@@ -384,6 +401,45 @@ public class DrillManagerViewModel : INotifyPropertyChanged
     private IReadOnlyList<string> GetCurrentDrillNames()
     {
         return Drills.Select(slot => slot.Name ?? string.Empty).ToList();
+    }
+
+    private void OnSlotPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (string.Equals(e.PropertyName, nameof(DrillSlotViewModel.Name), StringComparison.Ordinal))
+        {
+            RaiseStateChanged();
+        }
+    }
+
+    private void RaiseStateChanged()
+    {
+        if (_stateChangeSuppressionCount > 0)
+        {
+            _stateChangePending = true;
+            return;
+        }
+
+        StateChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void ResumeStateNotifications(bool skipPendingRaise = false)
+    {
+        if (_stateChangeSuppressionCount == 0)
+        {
+            return;
+        }
+
+        _stateChangeSuppressionCount--;
+        if (skipPendingRaise)
+        {
+            _stateChangePending = false;
+        }
+
+        if (_stateChangeSuppressionCount == 0 && _stateChangePending)
+        {
+            _stateChangePending = false;
+            StateChanged?.Invoke(this, EventArgs.Empty);
+        }
     }
 
     private void RunCheck()
