@@ -7,60 +7,60 @@
 		<AssemblyName>Compass</AssemblyName>
 		<LangVersion>latest</LangVersion>
 		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+		<!-- Ensure NuGet DLLs are copied for ILRepack -->
+		<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
 	</PropertyGroup>
 
-  <PropertyGroup>
-    <AutoCADReferencePath Condition="'$(AutoCADReferencePath)' == '' and '$(AUTOCAD_2022)' != ''">$([System.IO.Path]::GetFullPath('$(AUTOCAD_2022)'))</AutoCADReferencePath>
-    <AutoCADReferencePath Condition="'$(AutoCADReferencePath)' == '' and Exists('$(MSBuildThisFileDirectory)..\\..\\lib\\AutoCAD2022\\')">$(MSBuildThisFileDirectory)..\..\lib\AutoCAD2022\</AutoCADReferencePath>
-    <AutoCADReferencePath Condition="'$(AutoCADReferencePath)' == '' and Exists('$(ProgramW6432)\\Autodesk\\AutoCAD 2022\\')">$(ProgramW6432)\Autodesk\AutoCAD 2022\</AutoCADReferencePath>
-    <AutoCADReferencePath Condition="'$(AutoCADReferencePath)' == '' and Exists('$(ProgramFiles)\\Autodesk\\AutoCAD 2022\\')">$(ProgramFiles)\Autodesk\AutoCAD 2022\</AutoCADReferencePath>
-    <AutoCADReferencePath Condition="'$(AutoCADReferencePath)' == '' and Exists('$(MSBuildProgramFiles32)\\Autodesk\\AutoCAD 2022\\')">$(MSBuildProgramFiles32)\Autodesk\AutoCAD 2022\</AutoCADReferencePath>
-    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
-  </PropertyGroup>
-
+	<!-- ===== AutoCAD root (edit this if needed) ===== -->
 	<PropertyGroup>
-		<AutoCADReferencePath>$([System.String]::Copy('$(AutoCADReferencePath)').TrimEnd('\\'))</AutoCADReferencePath>
+		<!-- Environment override wins if set -->
+		<AutoCADReferencePath Condition="'$(AutoCADReferencePath)' == '' and '$(AUTOCAD_ROOT)' != ''">
+			$([System.IO.Path]::GetFullPath('$(AUTOCAD_ROOT)'))
+		</AutoCADReferencePath>
+		<!-- Default fallback -->
+		<AutoCADReferencePath Condition="'$(AutoCADReferencePath)' == ''">
+			C:\Program Files\Autodesk\AutoCAD 2022
+		</AutoCADReferencePath>
+		<AutoCADReferencePath>$([System.String]::Copy('$(AutoCADReferencePath)').TrimEnd('\'))</AutoCADReferencePath>
 	</PropertyGroup>
 
-	<!-- Autodesk references. CopyLocal=false so they don’t copy or merge. -->
+	<!-- Autodesk references (never Copy Local) -->
 	<ItemGroup>
-		<Reference Include="AcCoreMgd">
-			<HintPath>$(AutoCADReferencePath)\AcCoreMgd.dll</HintPath>
-			<Private>false</Private>
-			<SpecificVersion>false</SpecificVersion>
+		<!-- Map 3D managed API if installed -->
+		<Reference Include="accoremgd">
+		  <HintPath>..\..\..\..\..\..\Program Files\Autodesk\AutoCAD 2022\accoremgd.dll</HintPath>
 		</Reference>
-		<Reference Include="AcDbMgd">
-			<HintPath>$(AutoCADReferencePath)\AcDbMgd.dll</HintPath>
-			<Private>false</Private>
-			<SpecificVersion>false</SpecificVersion>
+		<Reference Include="Acdbmgd">
+		  <HintPath>..\..\..\..\..\..\Program Files\Autodesk\AutoCAD 2022\acdbmgd.dll</HintPath>
 		</Reference>
-		<Reference Include="AcDbMgdBrep">
-			<HintPath>$(AutoCADReferencePath)\AcDbMgdBrep.dll</HintPath>
-			<Private>false</Private>
-			<SpecificVersion>false</SpecificVersion>
+		<Reference Include="acdbmgdbrep">
+		  <HintPath>..\..\..\..\..\..\Program Files\Autodesk\AutoCAD 2022\acdbmgdbrep.dll</HintPath>
 		</Reference>
-		<Reference Include="AcMgd">
-			<HintPath>$(AutoCADReferencePath)\AcMgd.dll</HintPath>
-			<Private>false</Private>
-			<SpecificVersion>false</SpecificVersion>
+		<Reference Include="Acmgd">
+		  <HintPath>..\..\..\..\..\..\Program Files\Autodesk\AutoCAD 2022\acmgd.dll</HintPath>
 		</Reference>
 		<Reference Include="AdWindows">
-			<HintPath>$(AutoCADReferencePath)\AdWindows.dll</HintPath>
-			<Private>false</Private>
-			<SpecificVersion>false</SpecificVersion>
+		  <HintPath>..\..\..\..\..\..\Program Files\Autodesk\AutoCAD 2022\AdWindows.dll</HintPath>
 		</Reference>
 		<Reference Include="ManagedMapApi" Condition="Exists('$(AutoCADReferencePath)\Map\ManagedMapApi.dll')">
 			<HintPath>$(AutoCADReferencePath)\Map\ManagedMapApi.dll</HintPath>
 			<Private>false</Private>
 			<SpecificVersion>false</SpecificVersion>
 		</Reference>
+		<Reference Include="ManagedMapApi">
+		  <HintPath>..\..\..\..\..\..\Program Files\Autodesk\AutoCAD 2022\Map\ManagedMapApi.dll</HintPath>
+		</Reference>
 	</ItemGroup>
 
-	<!-- NuGet packages -->
+	<!-- NuGet packages (Configuration + EPPlus + NLog + Abstractions) -->
 	<ItemGroup>
 		<PackageReference Include="Microsoft.Extensions.Configuration" Version="6.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="6.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="6.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="6.0.0" />
+		<PackageReference Include="Microsoft.Extensions.FileProviders.Physical" Version="6.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="6.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.0" />
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
 		<PackageReference Include="NLog" Version="5.2.8" />
 		<PackageReference Include="EPPlus" Version="6.2.3" />
@@ -83,7 +83,7 @@
 		</Compile>
 	</ItemGroup>
 
-	<!-- Content to output -->
+	<!-- Content -->
 	<ItemGroup>
 		<None Update="appsettings.json">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -93,23 +93,23 @@
 		</None>
 	</ItemGroup>
 
-	<!-- Merge only *managed* NuGet/runtime deps, never Autodesk DLLs -->
+	<!-- Merge only managed NuGet/runtime deps; never Autodesk DLLs -->
 	<Target Name="RepackDependencies" AfterTargets="Build" Condition="'$(DesignTimeBuild)' != 'true'">
 		<PropertyGroup>
 			<MergedAssembly>$(OutputPath)$(AssemblyName).merged.dll</MergedAssembly>
 			<FinalAssembly>$(OutputPath)$(AssemblyName).dll</FinalAssembly>
 		</PropertyGroup>
+
 		<ItemGroup>
 			<AssembliesToMerge Include="$(FinalAssembly)" />
 			<AssembliesToMerge Include="@(ReferenceCopyLocalPaths)" Condition="'%(ReferenceCopyLocalPaths.Extension)' == '.dll'" />
 			<AssembliesToDelete Include="@(ReferenceCopyLocalPaths)" Condition="'%(ReferenceCopyLocalPaths.Extension)' == '.dll'" />
 		</ItemGroup>
+
 		<Message Text="Merging assemblies: @(AssembliesToMerge)" Importance="High" />
-		<ILRepack Internalize="true" Parallel="true" DebugInfo="true"
-				  InputAssemblies="@(AssembliesToMerge)"
-				  TargetPlatformVersion="v4"
-				  OutputFile="$(MergedAssembly)"
-				  LibraryPath="$(AutoCADReferencePath)" />
+
+		<ILRepack Internalize="true" Parallel="true" DebugInfo="true" InputAssemblies="@(AssembliesToMerge)" TargetPlatformVersion="v4" OutputFile="$(MergedAssembly)" LibraryPath="$(AutoCADReferencePath)" />
+
 		<Copy SourceFiles="$(MergedAssembly)" DestinationFiles="$(FinalAssembly)" OverwriteReadOnlyFiles="true" />
 		<Delete Files="$(MergedAssembly)" />
 		<Delete Files="@(AssembliesToDelete)" />
