@@ -31,6 +31,18 @@ You can therefore either install AutoCAD 2022 to its default location or point `
 
 Set their **Copy Local** property to `False` to ensure the plug-in binds to the host AutoCAD installation.
 
+## NuGet Dependencies
+
+`Compass.csproj` relies on a handful of third-party libraries (EPPlus, Newtonsoft.Json, Microsoft.Extensions.* and others). To
+make builds reliable on machines without NuGet connectivity—or with user profiles that include spaces in their path—the
+repository now includes a local package feed in `lib/NuGetPackages` together with a solution-level NuGet configuration file
+(`.nuget/NuGet.Config`). Visual Studio/MSBuild automatically restores packages from this feed and places the expanded contents
+into the solution-local `packages` folder.
+
+If you need to refresh the packages, either delete the `packages` folder and build the solution (NuGet will rehydrate from the
+local feed) or update the packages through Visual Studio's NuGet Package Manager, which will also honor the bundled feed while
+still allowing nuget.org as a fallback.
+
 ## Commands
 
 Once the assembly has been NETLOADed into AutoCAD, run the `Compass` command to display the main launcher palette. Each button opens its respective module in a dockable palette:
