@@ -10,50 +10,40 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <AutoCADReferencePath Condition="'$(AutoCADReferencePath)' == '' and '$(AUTOCAD_2022)' != ''">
-      $([System.IO.Path]::GetFullPath('$(AUTOCAD_2022)'))
-    </AutoCADReferencePath>
-    <AutoCADReferencePath Condition="'$(AutoCADReferencePath)' == '' and Exists('$(MSBuildThisFileDirectory)..\\..\\lib\\AutoCAD2022\\')">
-      $(MSBuildThisFileDirectory)..\..\lib\AutoCAD2022\
-    </AutoCADReferencePath>
-    <AutoCADReferencePath Condition="'$(AutoCADReferencePath)' == '' and Exists('$(ProgramW6432)\\Autodesk\\AutoCAD 2022\\')">
-      $(ProgramW6432)\Autodesk\AutoCAD 2022\
-    </AutoCADReferencePath>
-    <AutoCADReferencePath Condition="'$(AutoCADReferencePath)' == '' and Exists('$(ProgramFiles)\\Autodesk\\AutoCAD 2022\\')">
-      $(ProgramFiles)\Autodesk\AutoCAD 2022\
-    </AutoCADReferencePath>
-    <AutoCADReferencePath Condition="'$(AutoCADReferencePath)' == '' and Exists('$(MSBuildProgramFiles32)\\Autodesk\\AutoCAD 2022\\')">
-      $(MSBuildProgramFiles32)\Autodesk\AutoCAD 2022\
-    </AutoCADReferencePath>
+    <AutoCADReferencePath Condition="'$(AutoCADReferencePath)' == '' and '$(AUTOCAD_2022)' != ''">$([System.IO.Path]::GetFullPath('$(AUTOCAD_2022)'))</AutoCADReferencePath>
+    <AutoCADReferencePath Condition="'$(AutoCADReferencePath)' == '' and Exists('$(MSBuildThisFileDirectory)..\\..\\lib\\AutoCAD2022\\')">$(MSBuildThisFileDirectory)..\..\lib\AutoCAD2022\</AutoCADReferencePath>
+    <AutoCADReferencePath Condition="'$(AutoCADReferencePath)' == '' and Exists('$(ProgramW6432)\\Autodesk\\AutoCAD 2022\\')">$(ProgramW6432)\Autodesk\AutoCAD 2022\</AutoCADReferencePath>
+    <AutoCADReferencePath Condition="'$(AutoCADReferencePath)' == '' and Exists('$(ProgramFiles)\\Autodesk\\AutoCAD 2022\\')">$(ProgramFiles)\Autodesk\AutoCAD 2022\</AutoCADReferencePath>
+    <AutoCADReferencePath Condition="'$(AutoCADReferencePath)' == '' and Exists('$(MSBuildProgramFiles32)\\Autodesk\\AutoCAD 2022\\')">$(MSBuildProgramFiles32)\Autodesk\AutoCAD 2022\</AutoCADReferencePath>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(AutoCADReferencePath)' != ''">
-    <AutoCADReferencePath>$([System.String]::Copy('$(AutoCADReferencePath)').TrimEnd('\\'))\</AutoCADReferencePath>
+    <AutoCADReferencePath>$([System.String]::Copy('$(AutoCADReferencePath)').TrimEnd('\\'))</AutoCADReferencePath>
   </PropertyGroup>
 
     <ItemGroup>
       <Reference Include="accoremgd">
-        <HintPath>$(AutoCADReferencePath)accoremgd.dll</HintPath>
+        <HintPath>$(AutoCADReferencePath)\accoremgd.dll</HintPath>
         <Private>false</Private>
       </Reference>
       <Reference Include="Acdbmgd">
-        <HintPath>$(AutoCADReferencePath)acdbmgd.dll</HintPath>
+        <HintPath>$(AutoCADReferencePath)\acdbmgd.dll</HintPath>
         <Private>false</Private>
       </Reference>
       <Reference Include="acdbmgdbrep">
-        <HintPath>$(AutoCADReferencePath)acdbmgdbrep.dll</HintPath>
+        <HintPath>$(AutoCADReferencePath)\acdbmgdbrep.dll</HintPath>
         <Private>false</Private>
       </Reference>
       <Reference Include="Acmgd">
-        <HintPath>$(AutoCADReferencePath)acmgd.dll</HintPath>
+        <HintPath>$(AutoCADReferencePath)\acmgd.dll</HintPath>
         <Private>false</Private>
       </Reference>
       <Reference Include="AdWindows">
-        <HintPath>$(AutoCADReferencePath)AdWindows.dll</HintPath>
+        <HintPath>$(AutoCADReferencePath)\AdWindows.dll</HintPath>
         <Private>false</Private>
       </Reference>
       <Reference Include="ManagedMapApi">
-        <HintPath>$(AutoCADReferencePath)Map\ManagedMapApi.dll</HintPath>
+        <HintPath>$(AutoCADReferencePath)\Map\ManagedMapApi.dll</HintPath>
         <Private>false</Private>
       </Reference>
     <Reference Include="PresentationFramework" />
