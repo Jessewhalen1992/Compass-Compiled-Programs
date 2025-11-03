@@ -1207,13 +1207,49 @@ public class DrillCadToolService
 
     private static (int StartRow, int StartColumn, int EndRow, int EndColumn)? GetWorksheetDimension(ExcelWorksheet worksheet)
     {
-        var dimension = worksheet?.Dimension;
-        if (dimension == null)
+        if (worksheet == null)
         {
             return null;
         }
 
-        return (dimension.Start.Row, dimension.Start.Column, dimension.End.Row, dimension.End.Column);
+        var dimensionProperty = worksheet.GetType().GetProperty("Dimension");
+        if (dimensionProperty?.GetValue(worksheet) is ExcelAddressBase dimension && dimension.Start != null && dimension.End != null)
+        {
+            return (dimension.Start.Row, dimension.Start.Column, dimension.End.Row, dimension.End.Column);
+        }
+
+        var hasValues = false;
+        var startRow = int.MaxValue;
+        var startColumn = int.MaxValue;
+        var endRow = 0;
+        var endColumn = 0;
+
+        foreach (var cell in worksheet.Cells)
+        {
+            if (cell == null)
+            {
+                continue;
+            }
+
+            var hasContent = cell.Value != null || !string.IsNullOrEmpty(cell.Text) || !string.IsNullOrEmpty(cell.Formula);
+            if (!hasContent)
+            {
+                continue;
+            }
+
+            hasValues = true;
+            startRow = Math.Min(startRow, cell.Start.Row);
+            startColumn = Math.Min(startColumn, cell.Start.Column);
+            endRow = Math.Max(endRow, cell.End.Row);
+            endColumn = Math.Max(endColumn, cell.End.Column);
+        }
+
+        if (!hasValues)
+        {
+            return null;
+        }
+
+        return (startRow, startColumn, endRow, endColumn);
     }
 
     private void AdjustTableForClient(string[,] tableData, string heading)
