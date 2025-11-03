@@ -1,0 +1,54 @@
+<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>Compass</RootNamespace>
+    <AssemblyName>Compass</AssemblyName>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="AcDbMgd">
+      <HintPath>..\..\lib\AutoCAD2022\AcDbMgd.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="AcMgd">
+      <HintPath>..\..\lib\AutoCAD2022\AcMgd.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="AcCoreMgd">
+      <HintPath>..\..\lib\AutoCAD2022\AcCoreMgd.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="AdWindows">
+      <HintPath>..\..\lib\AutoCAD2022\AdWindows.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="PresentationFramework" />
+    <Reference Include="PresentationCore" />
+    <Reference Include="WindowsBase" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Page Include="UI\CompassControl.xaml" />
+    <Page Include="UI\DrillManagerControl.xaml" />
+    <Page Include="UI\ProfileManagerControl.xaml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="UI\CompassControl.xaml.cs">
+      <DependentUpon>CompassControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Update="UI\DrillManagerControl.xaml.cs">
+      <DependentUpon>DrillManagerControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Update="UI\ProfileManagerControl.xaml.cs">
+      <DependentUpon>ProfileManagerControl.xaml</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="UI\Themes\Generic.xaml" Condition="Exists('UI\\Themes\\Generic.xaml')" />
+  </ItemGroup>
+
+</Project>
