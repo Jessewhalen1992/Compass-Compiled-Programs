@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Compass.Serialization;
 
 namespace Compass.ViewModels;
 
@@ -95,6 +96,18 @@ public class DrillPropsAccessor
     public void EnsureCapacity(int desiredCount)
     {
         Count = desiredCount;
+    }
+
+    public int LoadFromJson(string path)
+    {
+        var names = DrillPropsJsonStore.Load(path);
+        SetDrillProps(names);
+        return names.Count;
+    }
+
+    public void SaveToJson(string path)
+    {
+        DrillPropsJsonStore.Save(path, GetDrillProps());
     }
 
     public void LoadFromDelimitedList(string? delimitedNames, char separator = ',')

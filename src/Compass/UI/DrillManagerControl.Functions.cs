@@ -46,6 +46,11 @@ public partial class DrillManagerControl
         DrillProps.SetDrillProps(names);
     }
 
+    public void SetAllDrillProps(string? name)
+    {
+        ViewModel.SetAllDrills(name);
+    }
+
     public void ClearDrillProp(int index)
     {
         DrillProps.ClearDrillProp(index);
@@ -53,7 +58,7 @@ public partial class DrillManagerControl
 
     public void ClearAllDrillProps()
     {
-        DrillProps.ClearAllDrillProps();
+        ViewModel.ClearAllDrills();
     }
 
     public void EnsureCapacity(int desiredCount)
@@ -79,6 +84,26 @@ public partial class DrillManagerControl
     public void Apply(Func<int, string, string?> mutator)
     {
         DrillProps.Apply(mutator);
+    }
+
+    public void ApplyCornerTemplate(string topLeft, string topRight, string bottomRight, string bottomLeft)
+    {
+        ViewModel.ApplyCornerTemplate(topLeft, topRight, bottomRight, bottomLeft);
+    }
+
+    public void AutoFillEmpty(string prefix, int startIndex)
+    {
+        ViewModel.AutoFillEmpty(prefix, startIndex);
+    }
+
+    public int LoadFromJson(string path)
+    {
+        return ViewModel.LoadFromJson(path);
+    }
+
+    public void SaveToJson(string path)
+    {
+        ViewModel.SaveToJson(path);
     }
 
     public string DrillProp1
