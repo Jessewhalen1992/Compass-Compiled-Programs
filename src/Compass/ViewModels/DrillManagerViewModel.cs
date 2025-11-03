@@ -29,6 +29,7 @@ public class DrillManagerViewModel : INotifyPropertyChanged
 
     private readonly WellCornerTableService _wellCornerTableService;
     private readonly DrillAttributeSyncService _drillAttributeSyncService;
+    private readonly string[] _committedNames = new string[MaximumDrills];
 
     private readonly RelayCommand _setSelectedCommand;
     private readonly RelayCommand _clearSelectedCommand;
@@ -51,6 +52,12 @@ public class DrillManagerViewModel : INotifyPropertyChanged
         Drills = new ObservableCollection<DrillSlotViewModel>();
         DrillCountOptions = Enumerable.Range(MinimumDrills, MaximumDrills - MinimumDrills + 1).ToList();
         UpdateDrillSlots();
+        for (var i = 0; i < Drills.Count; i++)
+        {
+            Drills[i].Commit();
+            SetCommittedName(i + 1, Drills[i].Name);
+        }
+        ClearCommittedBeyondCount();
         DrillProps = new DrillPropsAccessor(this);
 
         _swapFirstIndex = MinimumDrills;
@@ -225,13 +232,23 @@ public class DrillManagerViewModel : INotifyPropertyChanged
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    public void LoadExistingNames(IEnumerable<string> names)
+    public void LoadExistingNames(IEnumerable<string> names, bool commit = true)
     {
         var nameList = names?.Where(name => !string.IsNullOrWhiteSpace(name)).ToList() ?? new List<string>();
         DrillCount = Math.Max(MinimumDrills, Math.Min(MaximumDrills, nameList.Count));
         for (var i = 0; i < Drills.Count; i++)
         {
             Drills[i].Name = i < nameList.Count ? nameList[i] : string.Empty;
+            if (commit)
+            {
+                Drills[i].Commit();
+                SetCommittedName(i + 1, Drills[i].Name);
+            }
+        }
+
+        if (commit)
+        {
+            ClearCommittedBeyondCount();
         }
 
         RefreshSelectedName();
@@ -300,7 +317,10 @@ public class DrillManagerViewModel : INotifyPropertyChanged
         {
             for (var i = Drills.Count + 1; i <= _drillCount; i++)
             {
-                Drills.Add(new DrillSlotViewModel(i));
+                var slot = new DrillSlotViewModel(i);
+                Drills.Add(slot);
+                slot.Commit();
+                SetCommittedName(i, slot.Name);
             }
         }
         else if (Drills.Count > _drillCount)
@@ -311,6 +331,7 @@ public class DrillManagerViewModel : INotifyPropertyChanged
             }
         }
 
+        ClearCommittedBeyondCount();
         OnPropertyChanged(nameof(Drills));
     }
 
@@ -328,7 +349,28 @@ public class DrillManagerViewModel : INotifyPropertyChanged
             index = specifiedIndex;
         }
 
-        DrillProps.SetDrillProp(index, SelectedDrillName);
+        var newName = (SelectedDrillName ?? string.Empty).Trim();
+        var committedName = GetCommittedName(index);
+        var result = _drillAttributeSyncService.SetDrillName(index, newName, committedName, updateMatchingValues: true);
+        if (!result.Success)
+        {
+            return;
+        }
+
+        DrillProps.SetDrillProp(index, newName);
+        Drills[index - 1].Commit();
+        SetCommittedName(index, newName);
+
+        var defaultName = $"DRILL_{index}";
+        if (result.UpdatedAttributes > 0)
+        {
+            MessageBox.Show($"Updated {result.UpdatedAttributes} attribute(s) for {defaultName}.", "Set Drill", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        else
+        {
+            MessageBox.Show($"No DRILL_x attributes found for {defaultName} to update.", "Set Drill", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+
         RefreshSelectedName();
     }
 
@@ -376,9 +418,54 @@ public class DrillManagerViewModel : INotifyPropertyChanged
 
     private void SetAllDrills()
     {
-        var value = SelectedDrillName ?? string.Empty;
-        var values = Enumerable.Repeat(value, DrillCount);
-        DrillProps.SetDrillProps(values);
+        var confirmResult = MessageBox.Show(
+            "Are you sure you want to set DRILLNAME for all drills?",
+            "Confirm SET ALL",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Question);
+        if (confirmResult != MessageBoxResult.Yes)
+        {
+            return;
+        }
+
+        var changes = new List<string>();
+        for (var i = 0; i < DrillCount; i++)
+        {
+            var index = i + 1;
+            var defaultName = $"DRILL_{index}";
+            var newName = (Drills[i].Name ?? string.Empty).Trim();
+            if (!string.Equals(Drills[i].Name, newName, StringComparison.Ordinal))
+            {
+                Drills[i].Name = newName;
+            }
+
+            var committedName = GetCommittedName(index);
+            var shouldSet = index == 1 || !string.Equals(newName, defaultName, StringComparison.OrdinalIgnoreCase);
+            if (!shouldSet && string.Equals(committedName, defaultName, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            var result = _drillAttributeSyncService.SetDrillName(index, newName, committedName, updateMatchingValues: true);
+            if (!result.Success)
+            {
+                return;
+            }
+
+            if (!string.Equals(committedName, newName, StringComparison.OrdinalIgnoreCase))
+            {
+                changes.Add($"{defaultName}: '{committedName}' -> '{newName}'");
+            }
+
+            DrillProps.SetDrillProp(index, newName);
+            Drills[i].Commit();
+            SetCommittedName(index, newName);
+        }
+
+        var summary = changes.Count > 0 ? string.Join("\n", changes) : "No changes were necessary.";
+        MessageBox.Show(summary, "Set All", MessageBoxButton.OK, MessageBoxImage.Information);
+
+        ClearCommittedBeyondCount();
         RefreshSelectedName();
         RefreshCommandStates();
     }
@@ -414,7 +501,11 @@ public class DrillManagerViewModel : INotifyPropertyChanged
         for (var i = 0; i < limit; i++)
         {
             DrillProps.SetDrillProp(i + 1, results[i]);
+            Drills[i].Commit();
+            SetCommittedName(i + 1, Drills[i].Name);
         }
+
+        ClearCommittedBeyondCount();
 
         RefreshSelectedName();
         MessageBox.Show("Form fields updated from block attributes.", "Update", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -452,12 +543,26 @@ public class DrillManagerViewModel : INotifyPropertyChanged
             return;
         }
 
-        var firstValue = DrillProps.GetDrillProp(SwapFirstIndex);
-        var secondValue = DrillProps.GetDrillProp(SwapSecondIndex);
+        var firstIndex = SwapFirstIndex;
+        var secondIndex = SwapSecondIndex;
+        var firstValue = DrillProps.GetDrillProp(firstIndex);
+        var secondValue = DrillProps.GetDrillProp(secondIndex);
 
-        DrillProps.SetDrillProp(SwapFirstIndex, secondValue);
-        DrillProps.SetDrillProp(SwapSecondIndex, firstValue);
+        if (!_drillAttributeSyncService.SwapDrillNames(firstIndex, secondIndex, firstValue, secondValue))
+        {
+            return;
+        }
 
+        DrillProps.SetDrillProp(firstIndex, secondValue);
+        DrillProps.SetDrillProp(secondIndex, firstValue);
+        Drills[firstIndex - 1].Commit();
+        Drills[secondIndex - 1].Commit();
+        SetCommittedName(firstIndex, secondValue);
+        SetCommittedName(secondIndex, firstValue);
+
+        MessageBox.Show($"Swapped {firstValue} <-> {secondValue}", "Swap Complete", MessageBoxButton.OK, MessageBoxImage.Information);
+
+        ClearCommittedBeyondCount();
         RefreshSelectedName();
         RefreshCommandStates();
     }
@@ -481,6 +586,34 @@ public class DrillManagerViewModel : INotifyPropertyChanged
         }
 
         return SwapFirstIndex != SwapSecondIndex;
+    }
+
+    private string GetCommittedName(int index)
+    {
+        if (index < MinimumDrills || index > MaximumDrills)
+        {
+            return string.Empty;
+        }
+
+        return _committedNames[index - 1] ?? string.Empty;
+    }
+
+    private void SetCommittedName(int index, string? name)
+    {
+        if (index < MinimumDrills || index > MaximumDrills)
+        {
+            return;
+        }
+
+        _committedNames[index - 1] = name?.Trim() ?? string.Empty;
+    }
+
+    private void ClearCommittedBeyondCount()
+    {
+        for (var i = DrillCount; i < _committedNames.Length; i++)
+        {
+            _committedNames[i] = string.Empty;
+        }
     }
 
     private void EnsureSwapIndexesInRange()
