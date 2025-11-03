@@ -31,7 +31,7 @@ public class CompassApplication : IExtensionApplication
         {
             GetDrillManagerModule().SaveState();
         }
-        catch (Exception)
+        catch (System.Exception)
         {
             // ignore shutdown failures
         }
