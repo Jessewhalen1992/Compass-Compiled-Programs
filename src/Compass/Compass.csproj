@@ -11,25 +11,25 @@
 
   <PropertyGroup>
     <AutoCADReferencePath Condition="'$(AutoCADReferencePath)' == ''">
-      $(MSBuildThisFileDirectory)..\..\lib\AutoCAD2022
+      $(MSBuildThisFileDirectory)..\..\lib\AutoCAD2022\
     </AutoCADReferencePath>
   </PropertyGroup>
 
   <ItemGroup>
     <Reference Include="AcCoreMgd">
-      <HintPath>$(AutoCADReferencePath)\AcCoreMgd.dll</HintPath>
+      <HintPath>$(AutoCADReferencePath)AcCoreMgd.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="AcDbMgd">
-      <HintPath>$(AutoCADReferencePath)\AcDbMgd.dll</HintPath>
+      <HintPath>$(AutoCADReferencePath)AcDbMgd.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="AcMgd">
-      <HintPath>$(AutoCADReferencePath)\AcMgd.dll</HintPath>
+      <HintPath>$(AutoCADReferencePath)AcMgd.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="AdWindows">
-      <HintPath>$(AutoCADReferencePath)\AdWindows.dll</HintPath>
+      <HintPath>$(AutoCADReferencePath)AdWindows.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="PresentationFramework" />
