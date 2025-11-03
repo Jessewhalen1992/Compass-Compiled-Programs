@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using Compass.Models;
 
 namespace Compass.ViewModels;
 
@@ -7,6 +8,8 @@ public class DrillSlotViewModel : INotifyPropertyChanged
 {
     private string _name = string.Empty;
     private string _committedName = string.Empty;
+    private DrillCheckStatus _checkStatus = DrillCheckStatus.NotChecked;
+    private string? _checkSummary;
 
     public DrillSlotViewModel(int index)
     {
@@ -38,6 +41,7 @@ public class DrillSlotViewModel : INotifyPropertyChanged
             {
                 _name = value;
                 OnPropertyChanged();
+                ClearCheckStatus();
             }
         }
     }
@@ -55,9 +59,53 @@ public class DrillSlotViewModel : INotifyPropertyChanged
         }
     }
 
+    public DrillCheckStatus CheckStatus
+    {
+        get => _checkStatus;
+        private set
+        {
+            if (_checkStatus != value)
+            {
+                _checkStatus = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public string? CheckSummary
+    {
+        get => _checkSummary;
+        private set
+        {
+            if (_checkSummary != value)
+            {
+                _checkSummary = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
     public void Commit()
     {
         CommittedName = _name;
+    }
+
+    public void ApplyCheckResult(DrillCheckResult result)
+    {
+        if (result == null)
+        {
+            ClearCheckStatus();
+            return;
+        }
+
+        CheckStatus = result.Status;
+        CheckSummary = result.Summary;
+    }
+
+    public void ClearCheckStatus()
+    {
+        CheckStatus = DrillCheckStatus.NotChecked;
+        CheckSummary = null;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
