@@ -1,10 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Windows;
-using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Compass.Infrastructure.Logging;
+
+using AutoCADApplication = Autodesk.AutoCAD.ApplicationServices.Application;
 
 namespace Compass.Services;
 
@@ -21,7 +22,7 @@ public class DrillAttributeSyncService
 
     public IReadOnlyList<string>? GetDrillNamesFromSelection(int drillCount)
     {
-        var document = Application.DocumentManager.MdiActiveDocument;
+        var document = AutoCADApplication.DocumentManager.MdiActiveDocument;
         if (document == null)
         {
             MessageBox.Show("No active AutoCAD document is available.", "Update", MessageBoxButton.OK, MessageBoxImage.Information);
