@@ -2,11 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Windows;
-using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
 using Compass.Infrastructure.Logging;
+
+using AutoCADApplication = Autodesk.AutoCAD.ApplicationServices.Application;
 
 namespace Compass.Services;
 
@@ -23,7 +24,7 @@ public class WellCornerTableService
 
     public void CreateWellCornersTable()
     {
-        var document = Application.DocumentManager.MdiActiveDocument;
+        var document = AutoCADApplication.DocumentManager.MdiActiveDocument;
         if (document == null)
         {
             MessageBox.Show("No active AutoCAD document is available.", "WELL CORNERS", MessageBoxButton.OK, MessageBoxImage.Information);
