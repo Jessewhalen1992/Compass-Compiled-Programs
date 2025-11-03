@@ -1180,6 +1180,23 @@ public class DrillCadToolService
 
     private static Point3d GetCellNorthWest(Table table, int row, int column)
     {
+        try
+        {
+            // The table API exposes precise cell bounds that account for rotation, scaling, and
+            // title/header rows. Using the extents ensures the heading blocks are anchored to
+            // the actual north-west (top-left) corner of the target cell even for data-linked
+            // tables whose insertion point is the lower-left corner of the overall grid.
+            var extents = table.GetCellExtents(row, column);
+            var min = extents.MinPoint;
+            var max = extents.MaxPoint;
+            return new Point3d(min.X, max.Y, min.Z);
+        }
+        catch (Autodesk.AutoCAD.Runtime.Exception)
+        {
+            // Older drawing versions may not support resolving cell extents. Fall back to the
+            // manual calculation so we still place a block, even if alignment is approximate.
+        }
+
         var x = table.Position.X;
         var y = table.Position.Y;
 
@@ -1188,9 +1205,13 @@ public class DrillCadToolService
             x += table.Columns[index].Width;
         }
 
-        for (var index = 0; index < row; index++)
+        // Table.Position is the lower-left of the table. To emulate a north-west corner we
+        // need to walk upward from the bottom of the table to the requested row. Summing the
+        // height of the target row and every row beneath it moves us to the correct vertical
+        // offset.
+        for (var index = row; index < table.Rows.Count; index++)
         {
-            y -= table.Rows[index].Height;
+            y += table.Rows[index].Height;
         }
 
         return new Point3d(x, y, 0.0);
