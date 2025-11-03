@@ -5,6 +5,7 @@
     <RootNamespace>Compass</RootNamespace>
     <AssemblyName>Compass</AssemblyName>
     <LangVersion>latest</LangVersion>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
 
   <ItemGroup>
