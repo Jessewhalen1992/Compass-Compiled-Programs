@@ -137,69 +137,23 @@
                             Padding="16"
                             Margin="0,0,0,12">
                         <StackPanel>
-                            <TextBlock Text="Corner template"
+                            <TextBlock Text="AutoCAD tools"
                                        FontSize="14"
                                        FontWeight="SemiBold"
                                        Foreground="#FF111827" />
-                            <TextBlock Text="Quickly populate the four corner drills with standard labels."
+                            <TextBlock Text="Sync drill names from block attributes or create a WELL CORNERS table."
                                        FontSize="12"
                                        Foreground="#FF6B7280"
                                        Margin="0,4,0,12" />
-                            <Grid Margin="0,0,0,12">
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                </Grid.RowDefinitions>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-
-                                <TextBlock Grid.Row="0"
-                                           Text="Top left"
-                                           VerticalAlignment="Center"
-                                           Foreground="#FF374151"
-                                           Margin="0,0,12,0" />
-                                <TextBox Grid.Row="0"
-                                         Grid.Column="1"
-                                         Text="{Binding CornerTopLeft, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-
-                                <TextBlock Grid.Row="1"
-                                           Text="Top right"
-                                           VerticalAlignment="Center"
-                                           Foreground="#FF374151"
-                                           Margin="0,8,12,0" />
-                                <TextBox Grid.Row="1"
-                                         Grid.Column="1"
-                                         Margin="0,8,0,0"
-                                         Text="{Binding CornerTopRight, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-
-                                <TextBlock Grid.Row="2"
-                                           Text="Bottom right"
-                                           VerticalAlignment="Center"
-                                           Foreground="#FF374151"
-                                           Margin="0,8,12,0" />
-                                <TextBox Grid.Row="2"
-                                         Grid.Column="1"
-                                         Margin="0,8,0,0"
-                                         Text="{Binding CornerBottomRight, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-
-                                <TextBlock Grid.Row="3"
-                                           Text="Bottom left"
-                                           VerticalAlignment="Center"
-                                           Foreground="#FF374151"
-                                           Margin="0,8,12,0" />
-                                <TextBox Grid.Row="3"
-                                         Grid.Column="1"
-                                         Margin="0,8,0,0"
-                                         Text="{Binding CornerBottomLeft, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                            </Grid>
-                            <Button Content="Apply corner template"
+                            <Button Content="Update from block attributes"
                                     Padding="12,4"
                                     HorizontalAlignment="Right"
-                                    Command="{Binding ApplyCornersCommand}" />
+                                    Command="{Binding UpdateFromBlockAttributesCommand}" />
+                            <Button Content="Create WELL CORNERS table"
+                                    Padding="12,4"
+                                    HorizontalAlignment="Right"
+                                    Margin="0,8,0,0"
+                                    Command="{Binding CreateWellCornersTableCommand}" />
                         </StackPanel>
                     </Border>
 

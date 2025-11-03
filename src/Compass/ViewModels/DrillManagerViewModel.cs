@@ -4,8 +4,11 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Windows;
 using System.Windows.Input;
+using Compass.Infrastructure;
 using Compass.Models;
+using Compass.Services;
 
 namespace Compass.ViewModels;
 
@@ -20,12 +23,11 @@ public class DrillManagerViewModel : INotifyPropertyChanged
     private string _setAllName = string.Empty;
     private string _delimitedNames = string.Empty;
     private string _delimitedSeparator = ",";
-    private string _cornerTopLeft = "NW";
-    private string _cornerTopRight = "NE";
-    private string _cornerBottomRight = "SE";
-    private string _cornerBottomLeft = "SW";
     private string _autoFillPrefix = "DRILL ";
     private int _autoFillStartIndex = 1;
+
+    private readonly WellCornerTableService _wellCornerTableService;
+    private readonly DrillAttributeSyncService _drillAttributeSyncService;
 
     private readonly RelayCommand _setSelectedCommand;
     private readonly RelayCommand _clearSelectedCommand;
@@ -33,11 +35,17 @@ public class DrillManagerViewModel : INotifyPropertyChanged
     private readonly RelayCommand _clearAllCommand;
     private readonly RelayCommand _applyDelimitedCommand;
     private readonly RelayCommand _copyDelimitedCommand;
-    private readonly RelayCommand _applyCornersCommand;
+    private readonly RelayCommand _updateFromBlockAttributesCommand;
+    private readonly RelayCommand _createWellCornersTableCommand;
     private readonly RelayCommand _autoFillCommand;
 
     public DrillManagerViewModel()
     {
+        CompassEnvironment.Initialize();
+        var log = CompassEnvironment.Log;
+        _wellCornerTableService = new WellCornerTableService(log, new LayerService());
+        _drillAttributeSyncService = new DrillAttributeSyncService(log, new AutoCADBlockService());
+
         Drills = new ObservableCollection<DrillSlotViewModel>();
         DrillCountOptions = Enumerable.Range(MinimumDrills, MaximumDrills - MinimumDrills + 1).ToList();
         UpdateDrillSlots();
@@ -49,7 +57,8 @@ public class DrillManagerViewModel : INotifyPropertyChanged
         _clearAllCommand = new RelayCommand(_ => ClearAllDrills(), _ => DrillCount > 0);
         _applyDelimitedCommand = new RelayCommand(_ => ApplyDelimitedNames(), _ => true);
         _copyDelimitedCommand = new RelayCommand(_ => CopyDelimitedNames(), _ => DrillCount > 0);
-        _applyCornersCommand = new RelayCommand(_ => ApplyCornerTemplate(), _ => DrillCount > 0);
+        _updateFromBlockAttributesCommand = new RelayCommand(_ => UpdateFromBlockAttributes(), _ => DrillCount > 0);
+        _createWellCornersTableCommand = new RelayCommand(_ => CreateWellCornersTable());
         _autoFillCommand = new RelayCommand(_ => AutoFillEmpty(), _ => DrillCount > 0);
 
         SelectedDrillIndex = 1;
@@ -67,7 +76,8 @@ public class DrillManagerViewModel : INotifyPropertyChanged
     public ICommand ClearAllCommand => _clearAllCommand;
     public ICommand ApplyDelimitedCommand => _applyDelimitedCommand;
     public ICommand CopyDelimitedCommand => _copyDelimitedCommand;
-    public ICommand ApplyCornersCommand => _applyCornersCommand;
+    public ICommand UpdateFromBlockAttributesCommand => _updateFromBlockAttributesCommand;
+    public ICommand CreateWellCornersTableCommand => _createWellCornersTableCommand;
     public ICommand AutoFillCommand => _autoFillCommand;
 
     public int DrillCount
@@ -152,58 +162,6 @@ public class DrillManagerViewModel : INotifyPropertyChanged
             if (_delimitedSeparator != normalized)
             {
                 _delimitedSeparator = normalized;
-                OnPropertyChanged();
-            }
-        }
-    }
-
-    public string CornerTopLeft
-    {
-        get => _cornerTopLeft;
-        set
-        {
-            if (_cornerTopLeft != value)
-            {
-                _cornerTopLeft = value ?? string.Empty;
-                OnPropertyChanged();
-            }
-        }
-    }
-
-    public string CornerTopRight
-    {
-        get => _cornerTopRight;
-        set
-        {
-            if (_cornerTopRight != value)
-            {
-                _cornerTopRight = value ?? string.Empty;
-                OnPropertyChanged();
-            }
-        }
-    }
-
-    public string CornerBottomRight
-    {
-        get => _cornerBottomRight;
-        set
-        {
-            if (_cornerBottomRight != value)
-            {
-                _cornerBottomRight = value ?? string.Empty;
-                OnPropertyChanged();
-            }
-        }
-    }
-
-    public string CornerBottomLeft
-    {
-        get => _cornerBottomLeft;
-        set
-        {
-            if (_cornerBottomLeft != value)
-            {
-                _cornerBottomLeft = value ?? string.Empty;
                 OnPropertyChanged();
             }
         }
@@ -414,19 +372,27 @@ public class DrillManagerViewModel : INotifyPropertyChanged
         DelimitedNames = DrillProps.ToDelimitedList(separator);
     }
 
-    private void ApplyCornerTemplate()
+    private void UpdateFromBlockAttributes()
     {
-        const int required = 4;
-        if (DrillCount < required)
+        var results = _drillAttributeSyncService.GetDrillNamesFromSelection(DrillCount);
+        if (results == null || results.Count == 0)
         {
-            DrillCount = required;
+            return;
         }
 
-        DrillProps.SetDrillProp(1, CornerTopLeft);
-        DrillProps.SetDrillProp(2, CornerTopRight);
-        DrillProps.SetDrillProp(3, CornerBottomRight);
-        DrillProps.SetDrillProp(4, CornerBottomLeft);
+        var limit = Math.Min(results.Count, DrillCount);
+        for (var i = 0; i < limit; i++)
+        {
+            DrillProps.SetDrillProp(i + 1, results[i]);
+        }
+
         RefreshSelectedName();
+        MessageBox.Show("Form fields updated from block attributes.", "Update", MessageBoxButton.OK, MessageBoxImage.Information);
+    }
+
+    private void CreateWellCornersTable()
+    {
+        _wellCornerTableService.CreateWellCornersTable();
     }
 
     private void AutoFillEmpty()
@@ -472,7 +438,7 @@ public class DrillManagerViewModel : INotifyPropertyChanged
         _setAllCommand.RaiseCanExecuteChanged();
         _clearAllCommand.RaiseCanExecuteChanged();
         _copyDelimitedCommand.RaiseCanExecuteChanged();
-        _applyCornersCommand.RaiseCanExecuteChanged();
+        _updateFromBlockAttributesCommand.RaiseCanExecuteChanged();
         _autoFillCommand.RaiseCanExecuteChanged();
     }
 
