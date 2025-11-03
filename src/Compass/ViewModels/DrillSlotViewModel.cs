@@ -15,7 +15,19 @@ public class DrillSlotViewModel : INotifyPropertyChanged
 
     public int Index { get; }
 
-    public string DisplayLabel => $"Drill {Index}";
+    public string DisplayLabel
+    {
+        get
+        {
+            var name = Name?.Trim();
+            if (string.IsNullOrEmpty(name))
+            {
+                return $"Drill {Index}";
+            }
+
+            return $"Drill {Index} - {name}";
+        }
+    }
 
     public string Name
     {

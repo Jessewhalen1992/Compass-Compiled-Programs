@@ -184,111 +184,60 @@
                                        FontSize="12"
                                        Foreground="#FF6B7280"
                                        Margin="0,4,0,12" />
-                            <Button Content="Update from block attributes"
-                                    Padding="12,4"
-                                    HorizontalAlignment="Right"
-                                    Command="{Binding UpdateFromBlockAttributesCommand}" />
-                            <Button Content="Create WELL CORNERS table"
-                                    Padding="12,4"
-                                    HorizontalAlignment="Right"
-                                    Margin="0,8,0,0"
-                                    Command="{Binding CreateWellCornersTableCommand}" />
-                        </StackPanel>
-                    </Border>
-
-                    <Border Background="White"
-                            BorderBrush="#FFE3E8EF"
-                            BorderThickness="1"
-                            CornerRadius="8"
-                            Padding="16"
-                            Margin="0,0,0,12">
-                        <StackPanel>
-                            <TextBlock Text="Auto-fill empty drills"
-                                       FontSize="14"
-                                       FontWeight="SemiBold"
-                                       Foreground="#FF111827" />
-                            <TextBlock Text="Generate sequential names for any blank drills."
-                                       FontSize="12"
-                                       Foreground="#FF6B7280"
-                                       Margin="0,4,0,12" />
-                            <Grid Margin="0,0,0,12">
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                </Grid.RowDefinitions>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Row="0"
-                                           Text="Prefix"
-                                           VerticalAlignment="Center"
-                                           Foreground="#FF374151"
-                                           Margin="0,0,12,0" />
-                                <TextBox Grid.Row="0"
-                                         Grid.Column="1"
-                                         Text="{Binding AutoFillPrefix, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                                <TextBlock Grid.Row="1"
-                                           Text="Start number"
-                                           VerticalAlignment="Center"
-                                           Foreground="#FF374151"
-                                           Margin="0,8,12,0" />
-                                <TextBox Grid.Row="1"
-                                         Grid.Column="1"
-                                         Margin="0,8,0,0"
-                                         Text="{Binding AutoFillStartIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                            </Grid>
-                            <Button Content="Fill empty drills"
-                                    Padding="12,4"
-                                    HorizontalAlignment="Right"
-                                    Command="{Binding AutoFillCommand}" />
-                        </StackPanel>
-                    </Border>
-
-                    <Border Background="White"
-                            BorderBrush="#FFE3E8EF"
-                            BorderThickness="1"
-                            CornerRadius="8"
-                            Padding="16"
-                            Margin="0,0,0,12">
-                        <StackPanel>
-                            <TextBlock Text="Import or export list"
-                                       FontSize="14"
-                                       FontWeight="SemiBold"
-                                       Foreground="#FF111827" />
-                            <TextBlock Text="Paste a delimited list of drill names or copy the current configuration."
-                                       FontSize="12"
-                                       Foreground="#FF6B7280"
-                                       Margin="0,4,0,12" />
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                                <TextBlock Text="Separator"
-                                           VerticalAlignment="Center"
-                                           Foreground="#FF374151"
-                                           Margin="0,0,12,0" />
-                                <TextBox Width="48"
-                                         HorizontalContentAlignment="Center"
-                                         Text="{Binding DelimitedSeparator, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                            </StackPanel>
-                            <TextBox AcceptsReturn="True"
-                                     Height="120"
-                                     TextWrapping="Wrap"
-                                     ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                     Text="{Binding DelimitedNames, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                            <StackPanel Orientation="Horizontal"
+                            <StackPanel>
+                                <Button Content="Update from block attributes"
+                                        Padding="12,4"
                                         HorizontalAlignment="Right"
-                                        Margin="0,12,0,0">
-                                <Button Content="Apply list"
+                                        Command="{Binding UpdateFromBlockAttributesCommand}" />
+                                <Button Content="Create WELL CORNERS table"
                                         Padding="12,4"
-                                        MinWidth="100"
-                                        Command="{Binding ApplyDelimitedCommand}" />
-                                <Button Content="Copy current"
+                                        HorizontalAlignment="Right"
+                                        Margin="0,8,0,0"
+                                        Command="{Binding CreateWellCornersTableCommand}" />
+                                <Button Content="Check"
                                         Padding="12,4"
-                                        MinWidth="110"
-                                        Margin="8,0,0,0"
-                                        Command="{Binding CopyDelimitedCommand}" />
+                                        HorizontalAlignment="Right"
+                                        Margin="0,8,0,0"
+                                        Command="{Binding CheckCommand}" />
+                                <Button Content="Headings All"
+                                        Padding="12,4"
+                                        HorizontalAlignment="Right"
+                                        Margin="0,8,0,0"
+                                        Command="{Binding HeadingsAllCommand}" />
+                                <Button Content="Create XLS"
+                                        Padding="12,4"
+                                        HorizontalAlignment="Right"
+                                        Margin="0,8,0,0"
+                                        Command="{Binding CreateXlsCommand}" />
+                                <Button Content="Complete CORDS"
+                                        Padding="12,4"
+                                        HorizontalAlignment="Right"
+                                        Margin="0,8,0,0"
+                                        Command="{Binding CompleteCordsCommand}" />
+                                <Button Content="Get UTMS"
+                                        Padding="12,4"
+                                        HorizontalAlignment="Right"
+                                        Margin="0,8,0,0"
+                                        Command="{Binding GetUtmsCommand}" />
+                                <Button Content="Add Drill Points"
+                                        Padding="12,4"
+                                        HorizontalAlignment="Right"
+                                        Margin="0,8,0,0"
+                                        Command="{Binding AddDrillPointsCommand}" />
+                                <Button Content="Add Offsets"
+                                        Padding="12,4"
+                                        HorizontalAlignment="Right"
+                                        Margin="0,8,0,0"
+                                        Command="{Binding AddOffsetsCommand}" />
+                                <Button Content="Update Offsets"
+                                        Padding="12,4"
+                                        HorizontalAlignment="Right"
+                                        Margin="0,8,0,0"
+                                        Command="{Binding UpdateOffsetsCommand}" />
                             </StackPanel>
                         </StackPanel>
                     </Border>
+
                 </StackPanel>
             </ScrollViewer>
 

@@ -29,6 +29,7 @@ public class DrillManagerViewModel : INotifyPropertyChanged
 
     private readonly WellCornerTableService _wellCornerTableService;
     private readonly DrillAttributeSyncService _drillAttributeSyncService;
+    private readonly DrillCadToolService _drillCadToolService;
     private readonly string[] _committedNames = new string[MaximumDrills];
 
     private readonly RelayCommand _setSelectedCommand;
@@ -41,6 +42,16 @@ public class DrillManagerViewModel : INotifyPropertyChanged
     private readonly RelayCommand _createWellCornersTableCommand;
     private readonly RelayCommand _autoFillCommand;
     private readonly RelayCommand _swapCommand;
+    private readonly RelayCommand _checkCommand;
+    private readonly RelayCommand _headingsAllCommand;
+    private readonly RelayCommand _createXlsCommand;
+    private readonly RelayCommand _completeCordsCommand;
+    private readonly RelayCommand _getUtmsCommand;
+    private readonly RelayCommand _addDrillPointsCommand;
+    private readonly RelayCommand _addOffsetsCommand;
+    private readonly RelayCommand _updateOffsetsCommand;
+
+    private string _heading = "ICP";
 
     public DrillManagerViewModel()
     {
@@ -48,6 +59,7 @@ public class DrillManagerViewModel : INotifyPropertyChanged
         var log = CompassEnvironment.Log;
         _wellCornerTableService = new WellCornerTableService(log, new LayerService());
         _drillAttributeSyncService = new DrillAttributeSyncService(log, new AutoCADBlockService());
+        _drillCadToolService = new DrillCadToolService(log, new LayerService());
 
         Drills = new ObservableCollection<DrillSlotViewModel>();
         DrillCountOptions = Enumerable.Range(MinimumDrills, MaximumDrills - MinimumDrills + 1).ToList();
@@ -73,6 +85,14 @@ public class DrillManagerViewModel : INotifyPropertyChanged
         _createWellCornersTableCommand = new RelayCommand(_ => CreateWellCornersTable());
         _autoFillCommand = new RelayCommand(_ => AutoFillEmpty(), _ => DrillCount > 0);
         _swapCommand = new RelayCommand(_ => SwapDrills(), _ => CanSwap());
+        _checkCommand = new RelayCommand(_ => RunCheck(), _ => DrillCount > 0);
+        _headingsAllCommand = new RelayCommand(_ => RunHeadingsAll(), _ => DrillCount > 0);
+        _createXlsCommand = new RelayCommand(_ => _drillCadToolService.CreateXlsFromTable());
+        _completeCordsCommand = new RelayCommand(_ => RunCompleteCords(), _ => DrillCount > 0);
+        _getUtmsCommand = new RelayCommand(_ => _drillCadToolService.GetUtms());
+        _addDrillPointsCommand = new RelayCommand(_ => _drillCadToolService.AddDrillPoints());
+        _addOffsetsCommand = new RelayCommand(_ => _drillCadToolService.AddOffsets());
+        _updateOffsetsCommand = new RelayCommand(_ => _drillCadToolService.UpdateOffsets());
 
         SelectedDrillIndex = 1;
         OnPropertyChanged(nameof(SwapFirstIndex));
@@ -95,6 +115,26 @@ public class DrillManagerViewModel : INotifyPropertyChanged
     public ICommand CreateWellCornersTableCommand => _createWellCornersTableCommand;
     public ICommand AutoFillCommand => _autoFillCommand;
     public ICommand SwapCommand => _swapCommand;
+    public string Heading
+    {
+        get => _heading;
+        set
+        {
+            if (!string.Equals(_heading, value, StringComparison.Ordinal))
+            {
+                _heading = string.IsNullOrWhiteSpace(value) ? "ICP" : value;
+                OnPropertyChanged();
+            }
+        }
+    }
+    public ICommand CheckCommand => _checkCommand;
+    public ICommand HeadingsAllCommand => _headingsAllCommand;
+    public ICommand CreateXlsCommand => _createXlsCommand;
+    public ICommand CompleteCordsCommand => _completeCordsCommand;
+    public ICommand GetUtmsCommand => _getUtmsCommand;
+    public ICommand AddDrillPointsCommand => _addDrillPointsCommand;
+    public ICommand AddOffsetsCommand => _addOffsetsCommand;
+    public ICommand UpdateOffsetsCommand => _updateOffsetsCommand;
 
     public int DrillCount
     {
@@ -268,6 +308,7 @@ public class DrillManagerViewModel : INotifyPropertyChanged
             names = Enumerable.Range(1, DrillCount).Select(index => $"DRILL_{index}").ToList();
         }
 
+        Heading = string.IsNullOrWhiteSpace(state.Heading) ? "ICP" : state.Heading;
         LoadExistingNames(names);
     }
 
@@ -275,7 +316,8 @@ public class DrillManagerViewModel : INotifyPropertyChanged
     {
         var state = new DrillGridState
         {
-            DrillNames = Drills.Select(slot => slot.Name ?? string.Empty).ToList()
+            DrillNames = Drills.Select(slot => slot.Name ?? string.Empty).ToList(),
+            Heading = Heading
         };
 
         return state;
@@ -333,6 +375,26 @@ public class DrillManagerViewModel : INotifyPropertyChanged
 
         ClearCommittedBeyondCount();
         OnPropertyChanged(nameof(Drills));
+    }
+
+    private IReadOnlyList<string> GetCurrentDrillNames()
+    {
+        return Drills.Select(slot => slot.Name ?? string.Empty).ToList();
+    }
+
+    private void RunCheck()
+    {
+        _drillCadToolService.Check(GetCurrentDrillNames());
+    }
+
+    private void RunHeadingsAll()
+    {
+        _drillCadToolService.HeadingsAll(GetCurrentDrillNames());
+    }
+
+    private void RunCompleteCords()
+    {
+        _drillCadToolService.CompleteCords(GetCurrentDrillNames(), Heading);
     }
 
     private bool CanMutateSelectedDrill()
@@ -680,6 +742,14 @@ public class DrillManagerViewModel : INotifyPropertyChanged
         _updateFromBlockAttributesCommand.RaiseCanExecuteChanged();
         _autoFillCommand.RaiseCanExecuteChanged();
         _swapCommand.RaiseCanExecuteChanged();
+        _checkCommand.RaiseCanExecuteChanged();
+        _headingsAllCommand.RaiseCanExecuteChanged();
+        _createXlsCommand.RaiseCanExecuteChanged();
+        _completeCordsCommand.RaiseCanExecuteChanged();
+        _getUtmsCommand.RaiseCanExecuteChanged();
+        _addDrillPointsCommand.RaiseCanExecuteChanged();
+        _addOffsetsCommand.RaiseCanExecuteChanged();
+        _updateOffsetsCommand.RaiseCanExecuteChanged();
     }
 
     protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
