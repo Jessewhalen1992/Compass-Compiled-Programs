@@ -1,0 +1,50 @@
+<UserControl x:Class="Compass.UI.DrillManagerControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             d:DesignWidth="360"
+             d:DesignHeight="520">
+    <Grid Margin="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="0,0,0,12">
+            <TextBlock Text="Drill Manager" FontSize="18" FontWeight="Bold" />
+            <TextBlock Text="Configure drill names and ordering." FontSize="12" Foreground="Gray" />
+            <StackPanel Orientation="Horizontal" Margin="0,12,0,0" VerticalAlignment="Center">
+                <TextBlock Text="Number of drills" VerticalAlignment="Center" Margin="0,0,12,0" />
+                <ComboBox Width="80"
+                          ItemsSource="{Binding DrillCountOptions}"
+                          SelectedItem="{Binding DrillCount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+            </StackPanel>
+        </StackPanel>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <ItemsControl ItemsSource="{Binding Drills}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Margin="0,4" Padding="8" BorderBrush="#FFE0E0E0" BorderThickness="1" CornerRadius="4">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="12" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="{Binding DisplayLabel}" VerticalAlignment="Center" FontWeight="SemiBold" />
+                                <TextBox Grid.Column="2"
+                                         Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         Margin="0"
+                                         HorizontalAlignment="Stretch"
+                                         VerticalAlignment="Center" />
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+    </Grid>
+</UserControl>
