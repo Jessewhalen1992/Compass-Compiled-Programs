@@ -1186,10 +1186,15 @@ public class DrillCadToolService
             // title/header rows. Using the extents ensures the heading blocks are anchored to
             // the actual north-west (top-left) corner of the target cell even for data-linked
             // tables whose insertion point is the lower-left corner of the overall grid.
-            var extents = table.GetCellExtents(row, column);
-            var min = extents.MinPoint;
-            var max = extents.MaxPoint;
-            return new Point3d(min.X, max.Y, min.Z);
+            var points = new Point3dCollection();
+            table.GetCellExtents(row, column, isOuterCell: true, points);
+            if (points.Count > 0)
+            {
+                var minX = points.Cast<Point3d>().Min(point => point.X);
+                var maxY = points.Cast<Point3d>().Max(point => point.Y);
+                var minZ = points.Cast<Point3d>().Min(point => point.Z);
+                return new Point3d(minX, maxY, minZ);
+            }
         }
         catch (Autodesk.AutoCAD.Runtime.Exception)
         {
