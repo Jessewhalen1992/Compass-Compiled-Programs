@@ -1,118 +1,162 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
-  <PropertyGroup>
-    <TargetFramework>net48</TargetFramework>
-    <UseWPF>true</UseWPF>
-    <OutputType>Library</OutputType>
-    <RootNamespace>Compass</RootNamespace>
-    <AssemblyName>Compass</AssemblyName>
-    <LangVersion>latest</LangVersion>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net48</TargetFramework>
+		<UseWPF>true</UseWPF>
+		<OutputType>Library</OutputType>
+		<RootNamespace>Compass</RootNamespace>
+		<AssemblyName>Compass</AssemblyName>
+		<LangVersion>latest</LangVersion>
+		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+	</PropertyGroup>
 
-  <PropertyGroup>
-    <AutoCADReferencePath Condition="'$(AutoCADReferencePath)' == '' and '$(AUTOCAD_2022)' != ''">$([System.IO.Path]::GetFullPath('$(AUTOCAD_2022)'))</AutoCADReferencePath>
-    <AutoCADReferencePath Condition="'$(AutoCADReferencePath)' == '' and Exists('$(MSBuildThisFileDirectory)..\\..\\lib\\AutoCAD2022\\')">$(MSBuildThisFileDirectory)..\..\lib\AutoCAD2022\</AutoCADReferencePath>
-    <AutoCADReferencePath Condition="'$(AutoCADReferencePath)' == '' and Exists('$(ProgramW6432)\\Autodesk\\AutoCAD 2022\\')">$(ProgramW6432)\Autodesk\AutoCAD 2022\</AutoCADReferencePath>
-    <AutoCADReferencePath Condition="'$(AutoCADReferencePath)' == '' and Exists('$(ProgramFiles)\\Autodesk\\AutoCAD 2022\\')">$(ProgramFiles)\Autodesk\AutoCAD 2022\</AutoCADReferencePath>
-    <AutoCADReferencePath Condition="'$(AutoCADReferencePath)' == '' and Exists('$(MSBuildProgramFiles32)\\Autodesk\\AutoCAD 2022\\')">$(MSBuildProgramFiles32)\Autodesk\AutoCAD 2022\</AutoCADReferencePath>
-  </PropertyGroup>
+	<!-- ===== QUICK OVERRIDE (edit this path if yours differs) ===== -->
+	<PropertyGroup>
+		<!-- Set to your installed product root. Examples:
+         C:\Program Files\Autodesk\Autodesk AutoCAD Map 3D 2025
+         C:\Program Files\Autodesk\AutoCAD 2022
+         C:\Program Files\Autodesk\Autodesk Civil 3D 2024 -->
+		<AutoCADReferencePath Condition="'$(AutoCADReferencePath)' == ''">
+			C:\Program Files\Autodesk\Autodesk AutoCAD Map 3D 2025
+		</AutoCADReferencePath>
+	</PropertyGroup>
+	<!-- =========================================================== -->
 
-  <PropertyGroup Condition="'$(AutoCADReferencePath)' != ''">
-    <AutoCADReferencePath>$([System.String]::Copy('$(AutoCADReferencePath)').TrimEnd('\\'))</AutoCADReferencePath>
-  </PropertyGroup>
+	<!-- Resolve AutoCAD / Map 3D / Civil 3D roots (env var + common installs) -->
+	<PropertyGroup>
+		<AutoCADReferencePath Condition="'$(AUTOCAD_2022)' != ''">
+			$([System.IO.Path]::GetFullPath('$(AUTOCAD_2022)'))
+		</AutoCADReferencePath>
 
-    <ItemGroup>
-      <Reference Include="accoremgd">
-        <HintPath>$(AutoCADReferencePath)\accoremgd.dll</HintPath>
-        <Private>false</Private>
-      </Reference>
-      <Reference Include="Acdbmgd">
-        <HintPath>$(AutoCADReferencePath)\acdbmgd.dll</HintPath>
-        <Private>false</Private>
-      </Reference>
-      <Reference Include="acdbmgdbrep">
-        <HintPath>$(AutoCADReferencePath)\acdbmgdbrep.dll</HintPath>
-        <Private>false</Private>
-      </Reference>
-      <Reference Include="Acmgd">
-        <HintPath>$(AutoCADReferencePath)\acmgd.dll</HintPath>
-        <Private>false</Private>
-      </Reference>
-      <Reference Include="AdWindows">
-        <HintPath>$(AutoCADReferencePath)\AdWindows.dll</HintPath>
-        <Private>false</Private>
-      </Reference>
-      <Reference Include="ManagedMapApi">
-        <HintPath>$(AutoCADReferencePath)\Map\ManagedMapApi.dll</HintPath>
-        <Private>false</Private>
-      </Reference>
-    <Reference Include="PresentationFramework" />
-    <Reference Include="PresentationCore" />
-    <Reference Include="WindowsBase" />
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="6.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="6.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="6.0.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="NLog" Version="5.2.8" />
-    <PackageReference Include="EPPlus" Version="6.2.3" />
-    <PackageReference Include="System.Text.Encoding.CodePages" Version="6.0.0" />
-    <PackageReference Include="ILRepack.Lib.MSBuild.Task" Version="2.0.18">
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Update="UI\CompassControl.xaml.cs">
-      <DependentUpon>CompassControl.xaml</DependentUpon>
-    </Compile>
-    <Compile Update="UI\DrillManagerControl.xaml.cs">
-      <DependentUpon>DrillManagerControl.xaml</DependentUpon>
-    </Compile>
-    <Compile Update="UI\ProfileManagerControl.xaml.cs">
-      <DependentUpon>ProfileManagerControl.xaml</DependentUpon>
-    </Compile>
-  </ItemGroup>
+		<!-- repo-local cache -->
+		<AutoCADReferencePath Condition="Exists('$(MSBuildThisFileDirectory)..\\..\\lib\\AutoCAD2022\\')">
+			$(MSBuildThisFileDirectory)..\..\lib\AutoCAD2022\
+		</AutoCADReferencePath>
 
-  <ItemGroup>
-    <EmbeddedResource Include="UI\Themes\Generic.xaml" Condition="Exists('UI\\Themes\\Generic.xaml')" />
-  </ItemGroup>
+		<!-- AutoCAD vanilla -->
+		<AutoCADReferencePath Condition="Exists('$(ProgramW6432)\\Autodesk\\AutoCAD 2025\\')">$(ProgramW6432)\Autodesk\AutoCAD 2025\</AutoCADReferencePath>
+		<AutoCADReferencePath Condition="Exists('$(ProgramFiles)\\Autodesk\\AutoCAD 2025\\')">$(ProgramFiles)\Autodesk\AutoCAD 2025\</AutoCADReferencePath>
+		<AutoCADReferencePath Condition="Exists('$(ProgramW6432)\\Autodesk\\AutoCAD 2024\\')">$(ProgramW6432)\Autodesk\AutoCAD 2024\</AutoCADReferencePath>
+		<AutoCADReferencePath Condition="Exists('$(ProgramFiles)\\Autodesk\\AutoCAD 2024\\')">$(ProgramFiles)\Autodesk\AutoCAD 2024\</AutoCADReferencePath>
+		<AutoCADReferencePath Condition="Exists('$(ProgramW6432)\\Autodesk\\AutoCAD 2023\\')">$(ProgramW6432)\Autodesk\AutoCAD 2023\</AutoCADReferencePath>
+		<AutoCADReferencePath Condition="Exists('$(ProgramFiles)\\Autodesk\\AutoCAD 2023\\')">$(ProgramFiles)\Autodesk\AutoCAD 2023\</AutoCADReferencePath>
+		<AutoCADReferencePath Condition="Exists('$(ProgramW6432)\\Autodesk\\AutoCAD 2022\\')">$(ProgramW6432)\Autodesk\AutoCAD 2022\</AutoCADReferencePath>
+		<AutoCADReferencePath Condition="Exists('$(ProgramFiles)\\Autodesk\\AutoCAD 2022\\')">$(ProgramFiles)\Autodesk\AutoCAD 2022\</AutoCADReferencePath>
 
-  <ItemGroup>
-    <None Update="appsettings.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="NLog.config">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
+		<!-- Map 3D -->
+		<AutoCADReferencePath Condition="Exists('$(ProgramW6432)\\Autodesk\\Autodesk AutoCAD Map 3D 2025\\')">$(ProgramW6432)\Autodesk\Autodesk AutoCAD Map 3D 2025\</AutoCADReferencePath>
+		<AutoCADReferencePath Condition="Exists('$(ProgramFiles)\\Autodesk\\Autodesk AutoCAD Map 3D 2025\\')">$(ProgramFiles)\Autodesk\Autodesk AutoCAD Map 3D 2025\</AutoCADReferencePath>
+		<AutoCADReferencePath Condition="Exists('$(ProgramW6432)\\Autodesk\\Autodesk AutoCAD Map 3D 2024\\')">$(ProgramW6432)\Autodesk\Autodesk AutoCAD Map 3D 2024\</AutoCADReferencePath>
+		<AutoCADReferencePath Condition="Exists('$(ProgramFiles)\\Autodesk\\Autodesk AutoCAD Map 3D 2024\\')">$(ProgramFiles)\Autodesk\Autodesk AutoCAD Map 3D 2024\</AutoCADReferencePath>
+		<AutoCADReferencePath Condition="Exists('$(ProgramW6432)\\Autodesk\\Autodesk AutoCAD Map 3D 2023\\')">$(ProgramW6432)\Autodesk\Autodesk AutoCAD Map 3D 2023\</AutoCADReferencePath>
+		<AutoCADReferencePath Condition="Exists('$(ProgramFiles)\\Autodesk\\Autodesk AutoCAD Map 3D 2023\\')">$(ProgramFiles)\Autodesk\Autodesk AutoCAD Map 3D 2023\</AutoCADReferencePath>
+		<AutoCADReferencePath Condition="Exists('$(ProgramW6432)\\Autodesk\\Autodesk AutoCAD Map 3D 2022\\')">$(ProgramW6432)\Autodesk\Autodesk AutoCAD Map 3D 2022\</AutoCADReferencePath>
+		<AutoCADReferencePath Condition="Exists('$(ProgramFiles)\\Autodesk\\Autodesk AutoCAD Map 3D 2022\\')">$(ProgramFiles)\Autodesk\Autodesk AutoCAD Map 3D 2022\</AutoCADReferencePath>
 
-  <Target Name="RepackDependencies" AfterTargets="Build" Condition="'$(DesignTimeBuild)' != 'true'">
-    <PropertyGroup>
-      <MergedAssembly>$(OutputPath)$(AssemblyName).merged.dll</MergedAssembly>
-      <FinalAssembly>$(OutputPath)$(AssemblyName).dll</FinalAssembly>
-    </PropertyGroup>
+		<!-- Civil 3D -->
+		<AutoCADReferencePath Condition="Exists('$(ProgramW6432)\\Autodesk\\Autodesk Civil 3D 2025\\')">$(ProgramW6432)\Autodesk\Autodesk Civil 3D 2025\</AutoCADReferencePath>
+		<AutoCADReferencePath Condition="Exists('$(ProgramFiles)\\Autodesk\\Autodesk Civil 3D 2025\\')">$(ProgramFiles)\Autodesk\Autodesk Civil 3D 2025\</AutoCADReferencePath>
+		<AutoCADReferencePath Condition="Exists('$(ProgramW6432)\\Autodesk\\Autodesk Civil 3D 2024\\')">$(ProgramW6432)\Autodesk\Autodesk Civil 3D 2024\</AutoCADReferencePath>
+		<AutoCADReferencePath Condition="Exists('$(ProgramFiles)\\Autodesk\\Autodesk Civil 3D 2024\\')">$(ProgramFiles)\Autodesk\Autodesk Civil 3D 2024\</AutoCADReferencePath>
+		<AutoCADReferencePath Condition="Exists('$(ProgramW6432)\\Autodesk\\Autodesk Civil 3D 2023\\')">$(ProgramW6432)\Autodesk\Autodesk Civil 3D 2023\</AutoCADReferencePath>
+		<AutoCADReferencePath Condition="Exists('$(ProgramFiles)\\Autodesk\\Autodesk Civil 3D 2023\\')">$(ProgramFiles)\Autodesk\Autodesk Civil 3D 2023\</AutoCADReferencePath>
+		<AutoCADReferencePath Condition="Exists('$(ProgramW6432)\\Autodesk\\Autodesk Civil 3D 2022\\')">$(ProgramW6432)\Autodesk\Autodesk Civil 3D 2022\</AutoCADReferencePath>
+		<AutoCADReferencePath Condition="Exists('$(ProgramFiles)\\Autodesk\\Autodesk Civil 3D 2022\\')">$(ProgramFiles)\Autodesk\Autodesk Civil 3D 2022\</AutoCADReferencePath>
+	</PropertyGroup>
 
-    <ItemGroup>
-      <AssembliesToMerge Include="$(FinalAssembly)" />
-      <AssembliesToMerge Include="@(ReferenceCopyLocalPaths)" Condition="'%(ReferenceCopyLocalPaths.Extension)' == '.dll'" />
-      <AssembliesToDelete Include="@(ReferenceCopyLocalPaths)" Condition="'%(ReferenceCopyLocalPaths.Extension)' == '.dll'" />
-    </ItemGroup>
+	<PropertyGroup>
+		<AutoCADReferencePath>$([System.String]::Copy('$(AutoCADReferencePath)').TrimEnd('\\'))</AutoCADReferencePath>
+	</PropertyGroup>
 
-    <Message Text="Merging assemblies: @(AssembliesToMerge)" Importance="High" />
+	<!-- Autodesk references. CopyLocal=false so they don’t copy or merge. -->
+	<ItemGroup>
+		<Reference Include="AcCoreMgd">
+			<HintPath>$(AutoCADReferencePath)\AcCoreMgd.dll</HintPath>
+			<Private>false</Private>
+			<SpecificVersion>false</SpecificVersion>
+		</Reference>
+		<Reference Include="AcDbMgd">
+			<HintPath>$(AutoCADReferencePath)\AcDbMgd.dll</HintPath>
+			<Private>false</Private>
+			<SpecificVersion>false</SpecificVersion>
+		</Reference>
+		<Reference Include="AcDbMgdBrep">
+			<HintPath>$(AutoCADReferencePath)\AcDbMgdBrep.dll</HintPath>
+			<Private>false</Private>
+			<SpecificVersion>false</SpecificVersion>
+		</Reference>
+		<Reference Include="AcMgd">
+			<HintPath>$(AutoCADReferencePath)\AcMgd.dll</HintPath>
+			<Private>false</Private>
+			<SpecificVersion>false</SpecificVersion>
+		</Reference>
+		<Reference Include="AdWindows">
+			<HintPath>$(AutoCADReferencePath)\AdWindows.dll</HintPath>
+			<Private>false</Private>
+			<SpecificVersion>false</SpecificVersion>
+		</Reference>
+		<Reference Include="ManagedMapApi" Condition="Exists('$(AutoCADReferencePath)\Map\ManagedMapApi.dll')">
+			<HintPath>$(AutoCADReferencePath)\Map\ManagedMapApi.dll</HintPath>
+			<Private>false</Private>
+			<SpecificVersion>false</SpecificVersion>
+		</Reference>
+	</ItemGroup>
 
-    <ILRepack Internalize="true"
-              Parallel="true"
-              DebugInfo="true"
-              InputAssemblies="@(AssembliesToMerge)"
-              TargetPlatformVersion="v4"
-              OutputFile="$(MergedAssembly)"
-              LibraryPath="$(AutoCADReferencePath)" />
+	<!-- NuGet packages -->
+	<ItemGroup>
+		<PackageReference Include="Microsoft.Extensions.Configuration" Version="6.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="6.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="6.0.0" />
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+		<PackageReference Include="NLog" Version="5.2.8" />
+		<PackageReference Include="EPPlus" Version="6.2.3" />
+		<PackageReference Include="System.Text.Encoding.CodePages" Version="6.0.0" />
+		<PackageReference Include="ILRepack.Lib.MSBuild.Task" Version="2.0.18">
+			<PrivateAssets>all</PrivateAssets>
+		</PackageReference>
+	</ItemGroup>
 
-    <Copy SourceFiles="$(MergedAssembly)" DestinationFiles="$(FinalAssembly)" OverwriteReadOnlyFiles="true" />
-    <Delete Files="$(MergedAssembly)" />
+	<!-- XAML code-behind nesting -->
+	<ItemGroup>
+		<Compile Update="UI\CompassControl.xaml.cs">
+			<DependentUpon>CompassControl.xaml</DependentUpon>
+		</Compile>
+		<Compile Update="UI\DrillManagerControl.xaml.cs">
+			<DependentUpon>DrillManagerControl.xaml</DependentUpon>
+		</Compile>
+		<Compile Update="UI\ProfileManagerControl.xaml.cs">
+			<DependentUpon>ProfileManagerControl.xaml</DependentUpon>
+		</Compile>
+	</ItemGroup>
 
-    <Delete Files="@(AssembliesToDelete)" />
-  </Target>
+	<!-- Content to output -->
+	<ItemGroup>
+		<None Update="appsettings.json">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Update="NLog.config">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
 
+	<!-- Merge only *managed* NuGet/runtime deps, never Autodesk DLLs -->
+	<Target Name="RepackDependencies" AfterTargets="Build" Condition="'$(DesignTimeBuild)' != 'true'">
+		<PropertyGroup>
+			<MergedAssembly>$(OutputPath)$(AssemblyName).merged.dll</MergedAssembly>
+			<FinalAssembly>$(OutputPath)$(AssemblyName).dll</FinalAssembly>
+		</PropertyGroup>
+		<ItemGroup>
+			<AssembliesToMerge Include="$(FinalAssembly)" />
+			<AssembliesToMerge Include="@(ReferenceCopyLocalPaths)" Condition="'%(ReferenceCopyLocalPaths.Extension)' == '.dll'" />
+			<AssembliesToDelete Include="@(ReferenceCopyLocalPaths)" Condition="'%(ReferenceCopyLocalPaths.Extension)' == '.dll'" />
+		</ItemGroup>
+		<Message Text="Merging assemblies: @(AssembliesToMerge)" Importance="High" />
+		<ILRepack Internalize="true" Parallel="true" DebugInfo="true"
+				  InputAssemblies="@(AssembliesToMerge)"
+				  TargetPlatformVersion="v4"
+				  OutputFile="$(MergedAssembly)"
+				  LibraryPath="$(AutoCADReferencePath)" />
+		<Copy SourceFiles="$(MergedAssembly)" DestinationFiles="$(FinalAssembly)" OverwriteReadOnlyFiles="true" />
+		<Delete Files="$(MergedAssembly)" />
+		<Delete Files="@(AssembliesToDelete)" />
+	</Target>
 </Project>
