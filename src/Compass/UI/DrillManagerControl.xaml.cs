@@ -12,4 +12,6 @@ public partial class DrillManagerControl : UserControl
     }
 
     public DrillManagerViewModel ViewModel => (DrillManagerViewModel)DataContext;
+
+    public DrillPropsAccessor DrillProps => ViewModel.DrillProps;
 }
