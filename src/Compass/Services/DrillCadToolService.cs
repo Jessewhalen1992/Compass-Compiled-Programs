@@ -8,6 +8,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows;
 using Autodesk.AutoCAD.ApplicationServices;
+using Autodesk.AutoCAD.Colors;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
@@ -103,7 +104,7 @@ public class DrillCadToolService
         }
     }
 
-    public void HeadingsAll(IReadOnlyList<string> drillNames)
+    public void HeadingsAll(IReadOnlyList<string> drillNames, string heading)
     {
         var confirm = MessageBox.Show(
             "Are you sure you want to insert heading blocks (and DRILL blocks) for all non-default drills?",
@@ -127,6 +128,7 @@ public class DrillCadToolService
 
         try
         {
+            var headingLabel = string.Equals(heading, "HEEL", StringComparison.OrdinalIgnoreCase) ? "HEEL" : "ICP";
             var surfaceOptions = new PromptEntityOptions("\nSelect the data-linked table containing 'SURFACE':")
             {
                 AllowObjectOnLockedLayer = true
@@ -205,7 +207,7 @@ public class DrillCadToolService
                 transaction.Commit();
             }
 
-            MessageBox.Show("Successfully created DRILL + HEADING blocks for all non-default drills.", "Headings All", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show($"Successfully created DRILL + {headingLabel} blocks for all non-default drills.", "Headings All", MessageBoxButton.OK, MessageBoxImage.Information);
         }
         catch (System.Exception ex)
         {
@@ -349,7 +351,7 @@ public class DrillCadToolService
             MessageBox.Show("Coordinate table created!", "Complete CORDS", MessageBoxButton.OK, MessageBoxImage.Information);
             _log.Info("COMPLETE CORDS succeeded.");
 
-            HeadingsAll(drillNames);
+            HeadingsAll(drillNames, heading);
         }
         catch (System.Exception ex)
         {
@@ -726,7 +728,9 @@ public class DrillCadToolService
                 }
 
                 var columnsToCheck = new[] { 2, 3 };
-                var updates = new List<(int Row, int Column, double Value, char Direction, string Original)>();
+                var dataCells = new List<(int Row, int Column, double Value, string Direction, string OriginalText)>();
+                var offsetRegex = new Regex(@"^\s*([+-]?\d+(\.\d+)?)\s*([NnSsEeWw])\s*$");
+
                 for (var row = 0; row < table.Rows.Count; row++)
                 {
                     foreach (var column in columnsToCheck)
@@ -736,37 +740,177 @@ public class DrillCadToolService
                             continue;
                         }
 
-                        var text = table.Cells[row, column].TextString ?? string.Empty;
-                        if (!DrillParsers.TryParseOffset(text, out var value, out var direction))
+                        var text = table.Cells[row, column].TextString?.Trim() ?? string.Empty;
+                        if (string.IsNullOrWhiteSpace(text))
                         {
                             continue;
                         }
 
-                        updates.Add((row, column, value, direction, text));
+                        var match = offsetRegex.Match(text);
+                        if (!match.Success)
+                        {
+                            continue;
+                        }
+
+                        var numeric = match.Groups[1].Value;
+                        var direction = match.Groups[3].Value.ToUpperInvariant();
+                        if (double.TryParse(numeric, NumberStyles.Any, CultureInfo.InvariantCulture, out var value))
+                        {
+                            dataCells.Add((row, column, value, direction, text));
+                        }
                     }
                 }
 
-                if (updates.Count == 0)
+                if (dataCells.Count == 0)
                 {
-                    MessageBox.Show("No offset values detected.", "Update Offsets", MessageBoxButton.OK, MessageBoxImage.Information);
-                    transaction.Commit();
+                    MessageBox.Show("No numeric offset values found in columns C or D of the selected table.", "Update Offsets", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    _log.Info("Update Offsets: No data found in columns C/D.");
                     return;
                 }
 
-                foreach (var (row, column, value, direction, original) in updates)
+                var blockTable = (BlockTable)transaction.GetObject(database.BlockTableId, OpenMode.ForRead);
+                var modelSpace = (BlockTableRecord)transaction.GetObject(blockTable[BlockTableRecord.ModelSpace], OpenMode.ForRead);
+
+                var offsetTextIds = new List<ObjectId>();
+                foreach (ObjectId entityId in modelSpace)
                 {
-                    var northSouth = column == 2;
-                    var absolute = Math.Abs(value).ToString("0.0", CultureInfo.InvariantCulture);
-                    var prefix = northSouth ? (direction is 'N' ? string.Empty : "-") : (direction is 'E' ? string.Empty : "-");
-                    var suffix = northSouth ? (direction == 'N' ? "N" : "S") : (direction == 'E' ? "E" : "W");
-                    table.Cells[row, column].TextString = $"{prefix}{absolute}{suffix}";
+                    if (transaction.GetObject(entityId, OpenMode.ForRead) is not Entity entity)
+                    {
+                        continue;
+                    }
+
+                    if (!entity.Layer.Equals(OffsetsLayer, StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
+                    if (entity is DBText or MText)
+                    {
+                        offsetTextIds.Add(entityId);
+                    }
+                }
+
+                if (offsetTextIds.Count == 0)
+                {
+                    MessageBox.Show($"No offset text found on layer \"{OffsetsLayer}\".", "Update Offsets", MessageBoxButton.OK, MessageBoxImage.Information);
+                    _log.Info("Update Offsets: No text objects on P-Drill-Offset layer.");
+                    return;
+                }
+
+                if (offsetTextIds.Count > dataCells.Count)
+                {
+                    editor.SetImpliedSelection(offsetTextIds.ToArray());
+                    var warning = $"Found {offsetTextIds.Count} offset text objects for only {dataCells.Count} table entries. Please review and try again.";
+                    editor.WriteMessage($"\n{warning}\n");
+                    MessageBox.Show(warning, "Update Offsets", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    _log.Warn($"Update Offsets aborted: {offsetTextIds.Count} offset texts for {dataCells.Count} table cells.");
+                    return;
+                }
+
+                var offsetValues = new List<(double Value, ObjectId Id)>();
+                foreach (var entityId in offsetTextIds)
+                {
+                    var entity = transaction.GetObject(entityId, OpenMode.ForRead);
+                    switch (entity)
+                    {
+                        case DBText dbText:
+                            var text = dbText.TextString.Trim();
+                            _log.Info($"DBText => '{text}'");
+                            if (double.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out var dbValue))
+                            {
+                                offsetValues.Add((dbValue, entityId));
+                            }
+                            break;
+                        case MText mText:
+                            var raw = mText.Contents;
+                            _log.Info($"Raw MText.Contents => '{raw}'");
+                            var plain = Regex.Replace(raw, @"\{\\[^\}]+;([^\}]+)\}", "$1");
+                            plain = Regex.Replace(plain, @"\\[a-zA-Z]+\s*", " ");
+                            plain = plain.Trim();
+                            _log.Info($"Cleaned MText => '{plain}'");
+
+                            var lines = plain.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                            var foundNumeric = false;
+                            foreach (var line in lines)
+                            {
+                                var candidate = line.Trim();
+                                if (double.TryParse(candidate, NumberStyles.Any, CultureInfo.InvariantCulture, out var parsed))
+                                {
+                                    offsetValues.Add((parsed, entityId));
+                                    foundNumeric = true;
+                                    break;
+                                }
+
+                                var matchNumber = Regex.Match(candidate, @"([+-]?\d+(\.\d+)?)");
+                                if (matchNumber.Success && double.TryParse(matchNumber.Groups[1].Value, NumberStyles.Any, CultureInfo.InvariantCulture, out var extracted))
+                                {
+                                    offsetValues.Add((extracted, entityId));
+                                    foundNumeric = true;
+                                    break;
+                                }
+                            }
+
+                            if (!foundNumeric)
+                            {
+                                _log.Info("No numeric value found in MText => skipping.");
+                            }
+
+                            break;
+                    }
+                }
+
+                if (offsetValues.Count == 0)
+                {
+                    MessageBox.Show($"Text found on \"{OffsetsLayer}\" layer, but none contained valid numeric values.", "Update Offsets", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    _log.Info("Update Offsets: No numeric values found in offset text objects.");
+                    return;
+                }
+
+                const double tolerance = 10.0;
+                var updatedCount = 0;
+                var noMatchCount = 0;
+
+                table.UpgradeOpen();
+
+                foreach (var cell in dataCells)
+                {
+                    var bestDiff = double.MaxValue;
+                    var bestIndex = -1;
+
+                    for (var index = 0; index < offsetValues.Count; index++)
+                    {
+                        var diff = Math.Abs(offsetValues[index].Value - cell.Value);
+                        if (diff < bestDiff)
+                        {
+                            bestDiff = diff;
+                            bestIndex = index;
+                        }
+                    }
+
+                    if (bestIndex != -1 && bestDiff <= tolerance)
+                    {
+                        var matched = offsetValues[bestIndex].Value;
+                        offsetValues.RemoveAt(bestIndex);
+
+                        var formatted = matched.ToString("F1", CultureInfo.InvariantCulture) + " " + cell.Direction;
+                        table.Cells[cell.Row, cell.Column].TextString = formatted;
+                        updatedCount++;
+                    }
+                    else
+                    {
+                        table.Cells[cell.Row, cell.Column].TextString = cell.OriginalText;
+                        table.Cells[cell.Row, cell.Column].BackgroundColor = Color.FromRgb(255, 0, 0);
+                        noMatchCount++;
+                    }
                 }
 
                 table.GenerateLayout();
                 transaction.Commit();
-            }
 
-            MessageBox.Show("Offsets updated successfully.", "Update Offsets", MessageBoxButton.OK, MessageBoxImage.Information);
+                editor.WriteMessage($"\nUpdate Offsets completed: {updatedCount} cells updated, {noMatchCount} cells with no match.\n");
+                MessageBox.Show($"Update Offsets completed: {updatedCount} cells updated, {noMatchCount} cells with no match.", "Update Offsets", MessageBoxButton.OK, MessageBoxImage.Information);
+                _log.Info($"Update Offsets done => {updatedCount} updated, {noMatchCount} no-match cells.");
+            }
         }
         catch (System.Exception ex)
         {
@@ -1254,25 +1398,148 @@ public class DrillCadToolService
 
     private void AdjustTableForClient(string[,] tableData, string heading)
     {
-        if (tableData.GetLength(1) == 0)
+        if (tableData == null || tableData.GetLength(0) == 0 || tableData.GetLength(1) == 0)
         {
             return;
         }
 
+        var headingValue = string.Equals(heading, "HEEL", StringComparison.OrdinalIgnoreCase) ? "HEEL" : "ICP";
+        for (var row = 0; row < tableData.GetLength(0); row++)
+        {
+            for (var column = 0; column < tableData.GetLength(1); column++)
+            {
+                var cellText = tableData[row, column];
+                if (string.IsNullOrEmpty(cellText))
+                {
+                    continue;
+                }
+
+                if (headingValue == "HEEL" && cellText.IndexOf("ICP", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    tableData[row, column] = Regex.Replace(cellText, "ICP", "HEEL", RegexOptions.IgnoreCase);
+                }
+                else if (headingValue == "ICP" && cellText.IndexOf("HEEL", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    tableData[row, column] = Regex.Replace(cellText, "HEEL", "ICP", RegexOptions.IgnoreCase);
+                }
+            }
+        }
+
+        var groups = new Dictionary<char, List<int>>();
+        var tagRegex = new Regex("^[A-Z][0-9]+$", RegexOptions.IgnoreCase);
+
+        for (var row = 0; row < tableData.GetLength(0); row++)
+        {
+            char? letter = null;
+            for (var column = 0; column < tableData.GetLength(1); column++)
+            {
+                var value = tableData[row, column];
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    continue;
+                }
+
+                var trimmed = value.Trim();
+                if (tagRegex.IsMatch(trimmed))
+                {
+                    letter = char.ToUpperInvariant(trimmed[0]);
+                    break;
+                }
+            }
+
+            if (!letter.HasValue)
+            {
+                continue;
+            }
+
+            if (!groups.TryGetValue(letter.Value, out var rows))
+            {
+                rows = new List<int>();
+                groups[letter.Value] = rows;
+            }
+
+            rows.Add(row);
+        }
+
+        foreach (var entry in groups)
+        {
+            var rows = entry.Value;
+            rows.Sort();
+            var count = rows.Count;
+            if (count == 0)
+            {
+                continue;
+            }
+
+            tableData[rows[0], 0] = "SURFACE";
+
+            if (count == 1)
+            {
+                continue;
+            }
+
+            tableData[rows[count - 1], 0] = "BOTTOM HOLE";
+            tableData[rows[1], 0] = headingValue;
+
+            for (var index = 2; index < count - 1; index++)
+            {
+                tableData[rows[index], 0] = $"TURN #{index - 1}";
+            }
+        }
+
+        var nonEmptyRows = 0;
+        for (var row = 0; row < tableData.GetLength(0); row++)
+        {
+            var hasData = false;
+            for (var column = 0; column < tableData.GetLength(1); column++)
+            {
+                if (!string.IsNullOrWhiteSpace(tableData[row, column]))
+                {
+                    hasData = true;
+                    break;
+                }
+            }
+
+            if (hasData)
+            {
+                nonEmptyRows++;
+            }
+        }
+
+        if (nonEmptyRows == 1)
+        {
+            var cellValue = tableData[0, 0] ?? string.Empty;
+            var normalized = cellValue.ToUpperInvariant().Replace(" ", string.Empty);
+            if (normalized.Contains("BOTTOMHOLE"))
+            {
+                tableData[0, 0] = "SURFACE";
+            }
+        }
+
+        var hasSurfaceInFirstColumn = false;
+        var bottomHoleRows = new List<int>();
         for (var row = 0; row < tableData.GetLength(0); row++)
         {
             var value = tableData[row, 0] ?? string.Empty;
             var normalized = value.ToUpperInvariant().Replace(" ", string.Empty);
+            if (normalized.Contains("SURFACE"))
+            {
+                hasSurfaceInFirstColumn = true;
+                break;
+            }
+
             if (normalized.Contains("BOTTOMHOLE"))
             {
-                tableData[row, 0] = "SURFACE";
+                bottomHoleRows.Add(row);
             }
         }
 
-        var headingText = string.IsNullOrWhiteSpace(heading) ? "ICP" : heading.Trim();
-        if (tableData.GetLength(1) > 1)
+        if (!hasSurfaceInFirstColumn)
         {
-            tableData[0, 1] = headingText;
+            foreach (var row in bottomHoleRows)
+            {
+                tableData[row, 0] = "SURFACE";
+            }
         }
     }
 

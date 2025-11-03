@@ -31,6 +31,7 @@ public class DrillManagerViewModel : INotifyPropertyChanged
     private readonly DrillAttributeSyncService _drillAttributeSyncService;
     private readonly DrillCadToolService _drillCadToolService;
     private readonly string[] _committedNames = new string[MaximumDrills];
+    private static readonly string[] HeadingChoices = { "ICP", "HEEL" };
 
     private readonly RelayCommand _setSelectedCommand;
     private readonly RelayCommand _clearSelectedCommand;
@@ -105,6 +106,8 @@ public class DrillManagerViewModel : INotifyPropertyChanged
 
     public DrillPropsAccessor DrillProps { get; }
 
+    public IReadOnlyList<string> HeadingOptions => HeadingChoices;
+
     public ICommand SetSelectedCommand => _setSelectedCommand;
     public ICommand ClearSelectedCommand => _clearSelectedCommand;
     public ICommand SetAllCommand => _setAllCommand;
@@ -120,9 +123,10 @@ public class DrillManagerViewModel : INotifyPropertyChanged
         get => _heading;
         set
         {
-            if (!string.Equals(_heading, value, StringComparison.Ordinal))
+            var normalized = NormalizeHeading(value);
+            if (!string.Equals(_heading, normalized, StringComparison.Ordinal))
             {
-                _heading = string.IsNullOrWhiteSpace(value) ? "ICP" : value;
+                _heading = normalized;
                 OnPropertyChanged();
             }
         }
@@ -308,7 +312,7 @@ public class DrillManagerViewModel : INotifyPropertyChanged
             names = Enumerable.Range(1, DrillCount).Select(index => $"DRILL_{index}").ToList();
         }
 
-        Heading = string.IsNullOrWhiteSpace(state.Heading) ? "ICP" : state.Heading;
+        Heading = NormalizeHeading(state.Heading);
         LoadExistingNames(names);
     }
 
@@ -389,7 +393,7 @@ public class DrillManagerViewModel : INotifyPropertyChanged
 
     private void RunHeadingsAll()
     {
-        _drillCadToolService.HeadingsAll(GetCurrentDrillNames());
+        _drillCadToolService.HeadingsAll(GetCurrentDrillNames(), Heading);
     }
 
     private void RunCompleteCords()
@@ -763,6 +767,17 @@ public class DrillManagerViewModel : INotifyPropertyChanged
         _addDrillPointsCommand.RaiseCanExecuteChanged();
         _addOffsetsCommand.RaiseCanExecuteChanged();
         _updateOffsetsCommand.RaiseCanExecuteChanged();
+    }
+
+    private static string NormalizeHeading(string? heading)
+    {
+        if (string.IsNullOrWhiteSpace(heading))
+        {
+            return HeadingChoices[0];
+        }
+
+        var candidate = heading.Trim().ToUpperInvariant();
+        return HeadingChoices.Contains(candidate) ? candidate : HeadingChoices[0];
     }
 
     protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
