@@ -10,6 +10,12 @@
   </PropertyGroup>
 
   <PropertyGroup>
+    <RestorePackagesPath>$(MSBuildThisFileDirectory)..\..\packages\</RestorePackagesPath>
+    <RestoreSources>$(MSBuildThisFileDirectory)..\..\lib\NuGetPackages\;https://api.nuget.org/v3/index.json</RestoreSources>
+    <RestoreFallbackFolders>$(MSBuildThisFileDirectory)..\..\lib\NuGetPackages\</RestoreFallbackFolders>
+  </PropertyGroup>
+
+  <PropertyGroup>
     <AutoCADReferencePath Condition="'$(AutoCADReferencePath)' == '' and '$(AUTOCAD_2022)' != ''">$([System.IO.Path]::GetFullPath('$(AUTOCAD_2022)'))</AutoCADReferencePath>
     <AutoCADReferencePath Condition="'$(AutoCADReferencePath)' == '' and Exists('$(MSBuildThisFileDirectory)..\\..\\lib\\AutoCAD2022\\')">$(MSBuildThisFileDirectory)..\..\lib\AutoCAD2022\</AutoCADReferencePath>
     <AutoCADReferencePath Condition="'$(AutoCADReferencePath)' == '' and Exists('$(ProgramW6432)\\Autodesk\\AutoCAD 2022\\')">$(ProgramW6432)\Autodesk\AutoCAD 2022\</AutoCADReferencePath>
