@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
+using Compass.Models;
 
 namespace Compass.ViewModels;
 
@@ -248,6 +249,32 @@ public class DrillManagerViewModel : INotifyPropertyChanged
 
         RefreshSelectedName();
         RefreshCommandStates();
+    }
+
+    public void ApplyState(DrillGridState state)
+    {
+        if (state == null)
+        {
+            throw new ArgumentNullException(nameof(state));
+        }
+
+        var names = state.DrillNames ?? new List<string>();
+        if (names.Count == 0)
+        {
+            names = Enumerable.Range(1, DrillCount).Select(index => $"DRILL_{index}").ToList();
+        }
+
+        LoadExistingNames(names);
+    }
+
+    public DrillGridState CaptureState()
+    {
+        var state = new DrillGridState
+        {
+            DrillNames = Drills.Select(slot => slot.Name ?? string.Empty).ToList()
+        };
+
+        return state;
     }
 
     internal DrillSlotViewModel EnsureSlot(int index)
