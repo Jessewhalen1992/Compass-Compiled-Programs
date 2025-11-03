@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
   <PropertyGroup>
     <TargetFramework>net48</TargetFramework>
     <UseWPF>true</UseWPF>
@@ -16,21 +16,23 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Reference Include="AcCoreMgd">
-      <HintPath>$(AutoCADReferencePath)AcCoreMgd.dll</HintPath>
-      <Private>False</Private>
+    <Reference Include="accoremgd">
+      <HintPath>..\..\..\..\..\..\Program Files\Autodesk\AutoCAD 2022\accoremgd.dll</HintPath>
     </Reference>
-    <Reference Include="AcDbMgd">
-      <HintPath>$(AutoCADReferencePath)AcDbMgd.dll</HintPath>
-      <Private>False</Private>
+    <Reference Include="Acdbmgd">
+      <HintPath>..\..\..\..\..\..\Program Files\Autodesk\AutoCAD 2022\acdbmgd.dll</HintPath>
     </Reference>
-    <Reference Include="AcMgd">
-      <HintPath>$(AutoCADReferencePath)AcMgd.dll</HintPath>
-      <Private>False</Private>
+    <Reference Include="acdbmgdbrep">
+      <HintPath>..\..\..\..\..\..\Program Files\Autodesk\AutoCAD 2022\acdbmgdbrep.dll</HintPath>
+    </Reference>
+    <Reference Include="Acmgd">
+      <HintPath>..\..\..\..\..\..\Program Files\Autodesk\AutoCAD 2022\acmgd.dll</HintPath>
     </Reference>
     <Reference Include="AdWindows">
-      <HintPath>$(AutoCADReferencePath)AdWindows.dll</HintPath>
-      <Private>False</Private>
+      <HintPath>..\..\..\..\..\..\Program Files\Autodesk\AutoCAD 2022\AdWindows.dll</HintPath>
+    </Reference>
+    <Reference Include="ManagedMapApi">
+      <HintPath>..\..\..\..\..\..\Program Files\Autodesk\AutoCAD 2022\Map\ManagedMapApi.dll</HintPath>
     </Reference>
     <Reference Include="PresentationFramework" />
     <Reference Include="PresentationCore" />
@@ -81,20 +83,13 @@
 
     <ItemGroup>
       <AssembliesToMerge Include="$(FinalAssembly)" />
-      <AssembliesToMerge Include="@(ReferenceCopyLocalPaths)"
-                         Condition="'%(ReferenceCopyLocalPaths.Extension)' == '.dll'" />
-      <AssembliesToDelete Include="@(ReferenceCopyLocalPaths)"
-                          Condition="'%(ReferenceCopyLocalPaths.Extension)' == '.dll'" />
+      <AssembliesToMerge Include="@(ReferenceCopyLocalPaths)" Condition="'%(ReferenceCopyLocalPaths.Extension)' == '.dll'" />
+      <AssembliesToDelete Include="@(ReferenceCopyLocalPaths)" Condition="'%(ReferenceCopyLocalPaths.Extension)' == '.dll'" />
     </ItemGroup>
 
     <Message Text="Merging assemblies: @(AssembliesToMerge)" Importance="High" />
 
-    <ILRepack Internalize="true"
-              Parallel="true"
-              DebugInfo="true"
-              InputAssemblies="@(AssembliesToMerge)"
-              TargetPlatformVersion="v4"
-              OutputFile="$(MergedAssembly)" />
+    <ILRepack Internalize="true" Parallel="true" DebugInfo="true" InputAssemblies="@(AssembliesToMerge)" TargetPlatformVersion="v4" OutputFile="$(MergedAssembly)" />
 
     <Copy SourceFiles="$(MergedAssembly)" DestinationFiles="$(FinalAssembly)" OverwriteReadOnlyFiles="true" />
     <Delete Files="$(MergedAssembly)" />
