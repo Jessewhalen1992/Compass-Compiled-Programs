@@ -6,96 +6,97 @@
              mc:Ignorable="d"
              d:DesignWidth="900"
              d:DesignHeight="560">
-    <Grid Background="#FFF5F6FA" Padding="16">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
+    <Border Background="#FFF5F6FA" Padding="16">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
 
-        <StackPanel Grid.Row="0" Orientation="Vertical" Margin="0,0,0,16">
-            <TextBlock Text="Drill Properties"
-                       FontSize="22"
-                       FontWeight="Bold"
-                       Foreground="#FF222B45" />
-            <TextBlock Text="Manage drill labels, apply templates, and quickly update the full grid."
-                       FontSize="12"
-                       Foreground="#FF6B7280"
-                       Margin="0,4,0,0" />
-        </StackPanel>
+            <StackPanel Grid.Row="0" Orientation="Vertical" Margin="0,0,0,16">
+                <TextBlock Text="Drill Properties"
+                           FontSize="22"
+                           FontWeight="Bold"
+                           Foreground="#FF222B45" />
+                <TextBlock Text="Manage drill labels, apply templates, and quickly update the full grid."
+                           FontSize="12"
+                           Foreground="#FF6B7280"
+                           Margin="0,4,0,0" />
+            </StackPanel>
 
-        <Grid Grid.Row="1">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="340" />
-                <ColumnDefinition Width="24" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="340" />
+                    <ColumnDefinition Width="24" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
 
-            <ScrollViewer Grid.Column="0"
-                          VerticalScrollBarVisibility="Auto"
-                          HorizontalScrollBarVisibility="Disabled">
-                <StackPanel>
-                    <Border Background="White"
-                            BorderBrush="#FFE3E8EF"
-                            BorderThickness="1"
-                            CornerRadius="8"
-                            Padding="16"
-                            Margin="0,0,0,12">
-                        <StackPanel>
-                            <TextBlock Text="Grid setup"
-                                       FontSize="14"
-                                       FontWeight="SemiBold"
-                                       Foreground="#FF111827" />
-                            <TextBlock Text="Choose how many drills you need in the grid."
-                                       FontSize="12"
-                                       Foreground="#FF6B7280"
-                                       Margin="0,4,0,12" />
-                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <TextBlock Text="Drill count"
-                                           VerticalAlignment="Center"
-                                           Margin="0,0,12,0"
-                                           Foreground="#FF374151" />
-                                <ComboBox Width="120"
-                                          ItemsSource="{Binding DrillCountOptions}"
-                                          SelectedItem="{Binding DrillCount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                <ScrollViewer Grid.Column="0"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel>
+                        <Border Background="White"
+                                BorderBrush="#FFE3E8EF"
+                                BorderThickness="1"
+                                CornerRadius="8"
+                                Padding="16"
+                                Margin="0,0,0,12">
+                            <StackPanel>
+                                <TextBlock Text="Grid setup"
+                                           FontSize="14"
+                                           FontWeight="SemiBold"
+                                           Foreground="#FF111827" />
+                                <TextBlock Text="Choose how many drills you need in the grid."
+                                           FontSize="12"
+                                           Foreground="#FF6B7280"
+                                           Margin="0,4,0,12" />
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="Drill count"
+                                               VerticalAlignment="Center"
+                                               Margin="0,0,12,0"
+                                               Foreground="#FF374151" />
+                                    <ComboBox Width="120"
+                                              ItemsSource="{Binding DrillCountOptions}"
+                                              SelectedItem="{Binding DrillCount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
                             </StackPanel>
-                        </StackPanel>
-                    </Border>
+                        </Border>
 
-                    <Border Background="White"
-                            BorderBrush="#FFE3E8EF"
-                            BorderThickness="1"
-                            CornerRadius="8"
-                            Padding="16"
-                            Margin="0,0,0,12">
-                        <StackPanel>
-                            <TextBlock Text="Selected drill"
-                                       FontSize="14"
-                                       FontWeight="SemiBold"
-                                       Foreground="#FF111827" />
-                            <TextBlock Text="Pick a drill to edit, update its name, or clear it."
-                                       FontSize="12"
-                                       Foreground="#FF6B7280"
-                                       Margin="0,4,0,12" />
-                            <ComboBox ItemsSource="{Binding Drills}"
-                                      DisplayMemberPath="DisplayLabel"
-                                      SelectedValuePath="Index"
-                                      SelectedValue="{Binding SelectedDrillIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                      Margin="0,0,0,8" />
-                            <TextBox Text="{Binding SelectedDrillName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                     Margin="0,0,0,12" />
-                            <UniformGrid Columns="2" HorizontalAlignment="Right" Margin="0">
-                                <Button Content="Set"
-                                        Margin="0,0,8,0"
-                                        Padding="12,4"
-                                        MinWidth="80"
-                                        Command="{Binding SetSelectedCommand}" />
-                                <Button Content="Clear"
-                                        Padding="12,4"
-                                        MinWidth="80"
-                                        Command="{Binding ClearSelectedCommand}" />
-                            </UniformGrid>
-                        </StackPanel>
-                    </Border>
+                        <Border Background="White"
+                                BorderBrush="#FFE3E8EF"
+                                BorderThickness="1"
+                                CornerRadius="8"
+                                Padding="16"
+                                Margin="0,0,0,12">
+                            <StackPanel>
+                                <TextBlock Text="Selected drill"
+                                           FontSize="14"
+                                           FontWeight="SemiBold"
+                                           Foreground="#FF111827" />
+                                <TextBlock Text="Pick a drill to edit, update its name, or clear it."
+                                           FontSize="12"
+                                           Foreground="#FF6B7280"
+                                           Margin="0,4,0,12" />
+                                <ComboBox ItemsSource="{Binding Drills}"
+                                          DisplayMemberPath="DisplayLabel"
+                                          SelectedValuePath="Index"
+                                          SelectedValue="{Binding SelectedDrillIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                          Margin="0,0,0,8" />
+                                <TextBox Text="{Binding SelectedDrillName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         Margin="0,0,0,12" />
+                                <UniformGrid Columns="2" HorizontalAlignment="Right" Margin="0">
+                                    <Button Content="Set"
+                                            Margin="0,0,8,0"
+                                            Padding="12,4"
+                                            MinWidth="80"
+                                            Command="{Binding SetSelectedCommand}" />
+                                    <Button Content="Clear"
+                                            Padding="12,4"
+                                            MinWidth="80"
+                                            Command="{Binding ClearSelectedCommand}" />
+                                </UniformGrid>
+                            </StackPanel>
+                        </Border>
 
                     <Border Background="White"
                             BorderBrush="#FFE3E8EF"
@@ -393,5 +394,5 @@
                 </Grid>
             </Border>
         </Grid>
-    </Grid>
+    </Border>
 </UserControl>
