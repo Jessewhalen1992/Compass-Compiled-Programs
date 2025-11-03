@@ -10,9 +10,25 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <AutoCADReferencePath Condition="'$(AutoCADReferencePath)' == ''">
+    <AutoCADReferencePath Condition="'$(AutoCADReferencePath)' == '' and '$(AUTOCAD_2022)' != ''">
+      $([System.IO.Path]::GetFullPath('$(AUTOCAD_2022)'))
+    </AutoCADReferencePath>
+    <AutoCADReferencePath Condition="'$(AutoCADReferencePath)' == '' and Exists('$(MSBuildThisFileDirectory)..\\..\\lib\\AutoCAD2022\\')">
       $(MSBuildThisFileDirectory)..\..\lib\AutoCAD2022\
     </AutoCADReferencePath>
+    <AutoCADReferencePath Condition="'$(AutoCADReferencePath)' == '' and Exists('$(ProgramW6432)\\Autodesk\\AutoCAD 2022\\')">
+      $(ProgramW6432)\Autodesk\AutoCAD 2022\
+    </AutoCADReferencePath>
+    <AutoCADReferencePath Condition="'$(AutoCADReferencePath)' == '' and Exists('$(ProgramFiles)\\Autodesk\\AutoCAD 2022\\')">
+      $(ProgramFiles)\Autodesk\AutoCAD 2022\
+    </AutoCADReferencePath>
+    <AutoCADReferencePath Condition="'$(AutoCADReferencePath)' == '' and Exists('$(MSBuildProgramFiles32)\\Autodesk\\AutoCAD 2022\\')">
+      $(MSBuildProgramFiles32)\Autodesk\AutoCAD 2022\
+    </AutoCADReferencePath>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(AutoCADReferencePath)' != ''">
+    <AutoCADReferencePath>$([System.String]::Copy('$(AutoCADReferencePath)').TrimEnd('\\'))\</AutoCADReferencePath>
   </PropertyGroup>
 
     <ItemGroup>
