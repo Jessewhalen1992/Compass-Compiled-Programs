@@ -43,7 +43,7 @@ public class ProfileManagerModule : ICompassModule
                 return;
             }
 
-            var netloadCommand = $@"_.NETLOAD \"{assemblyPath}\" ";
+            var netloadCommand = $@"_.NETLOAD ""{assemblyPath}"" ";
             document.SendStringToExecute(netloadCommand, true, false, false);
             document.SendStringToExecute("profilemanager ", true, false, false);
         }
