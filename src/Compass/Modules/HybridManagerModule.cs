@@ -18,5 +18,5 @@ public class HybridManagerModule : ManagedPluginModuleBase
     public override string Description => "Launch the Hybrid Program tools.";
 
     protected override IReadOnlyList<string> CandidateDllPaths => CandidatePaths;
-    protected override string CommandName => "hybridmanager";
+    protected override string CommandName => "hybridplan";
 }

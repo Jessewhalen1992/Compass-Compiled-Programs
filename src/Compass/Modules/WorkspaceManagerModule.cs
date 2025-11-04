@@ -18,5 +18,5 @@ public class WorkspaceManagerModule : ManagedPluginModuleBase
     public override string Description => "Launch the Workspace configuration manager.";
 
     protected override IReadOnlyList<string> CandidateDllPaths => CandidatePaths;
-    protected override string CommandName => "workspacemanager";
+    protected override string CommandName => "WSG";
 }

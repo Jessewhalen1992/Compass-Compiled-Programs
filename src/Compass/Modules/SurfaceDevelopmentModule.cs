@@ -18,5 +18,5 @@ public class SurfaceDevelopmentModule : ManagedPluginModuleBase
     public override string Description => "Launch the Residence Sync manager.";
 
     protected override IReadOnlyList<string> CandidateDllPaths => CandidatePaths;
-    protected override string CommandName => "surfacedevelopment";
+    protected override string CommandName => "RSUI";
 }
