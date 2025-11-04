@@ -43,9 +43,9 @@ public class ProfileManagerModule : ICompassModule
                 return;
             }
 
-            var netloadCommand = $@"_.NETLOAD ""{assemblyPath}"" ";
+            var netloadCommand = $@"_.NETLOAD ""{assemblyPath}""\n";
             document.SendStringToExecute(netloadCommand, true, false, false);
-            document.SendStringToExecute("profilemanager ", true, false, false);
+            document.SendStringToExecute("profilemanager\n", true, false, false);
         }
         catch (Exception ex)
         {
