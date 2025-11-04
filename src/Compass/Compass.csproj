@@ -72,9 +72,13 @@
 		<PackageReference Include="EPPlus" Version="8.0.5" />
 		<PackageReference Include="EPPlus.Interfaces" Version="8.0.0" />
 		<PackageReference Include="EPPlus.System.Drawing" Version="8.0.0" />
+
+		<!-- Core System packages: versions aligned to include net462 builds -->
 		<PackageReference Include="System.Buffers" Version="4.6.1" />
-		<PackageReference Include="System.Numerics.Vectors" Version="4.5.0" />
-		<PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.0.0" />
+		<PackageReference Include="System.Numerics.Vectors" Version="4.6.1" />
+		<PackageReference Include="System.ValueTuple" Version="4.6.1" />
+		<PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.1.2" />
+		<PackageReference Include="System.Threading.Tasks.Extensions" Version="4.6.3" />
 
 		<!-- JSON library. 8.0.0 is vulnerable to CVE-2024-43485; use patched 8.0.5 -->
 		<PackageReference Include="System.Text.Json" Version="8.0.5" />
@@ -82,8 +86,6 @@
 		<!-- Fody weaving and Costura for embedding dependencies. Specify explicit versions to satisfy NU1604 -->
 		<PackageReference Include="Fody" Version="6.9.3" PrivateAssets="all" />
 		<PackageReference Include="Costura.Fody" Version="6.0.0" PrivateAssets="all" />
-		<PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.4" />
-		<PackageReference Include="System.ValueTuple" Version="4.5.0" />
 	</ItemGroup>
 
 	<!-- XAML code-behind nesting -->
@@ -108,5 +110,4 @@
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
 	</ItemGroup>
-
 </Project>
