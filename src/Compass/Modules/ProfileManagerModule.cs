@@ -7,7 +7,7 @@ namespace Compass.Modules;
 /// This implementation programmatically loads the managed ProfileCrossings.dll
 /// (replicating NETLOAD) and then posts the "profilemanager" command to AutoCAD.
 /// </summary>
-public class ProfileManagerModule : ManagedPluginModuleBase
+public class ProfileManagerModule : ManagedPluginModuleBaseB
 {
     private static readonly string[] CandidatePaths =
     {
