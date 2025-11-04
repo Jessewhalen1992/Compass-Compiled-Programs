@@ -66,7 +66,7 @@
                 <PackageReference Include="EPPlus.Interfaces" Version="8.0.0" />
                 <PackageReference Include="EPPlus.System.Drawing" Version="8.0.0" />
                 <PackageReference Include="System.Text.Encoding.CodePages" Version="6.0.0" />
-                <PackageReference Include="System.Text.Json" Version="7.0.3" />
+                <PackageReference Include="System.Text.Json" Version="8.0.0" />
                 <PackageReference Include="Fody" PrivateAssets="All" />
                 <PackageReference Include="Costura.Fody" PrivateAssets="All" />
         </ItemGroup>
