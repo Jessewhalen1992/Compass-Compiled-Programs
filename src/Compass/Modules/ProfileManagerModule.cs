@@ -46,7 +46,7 @@ public class ProfileManagerModule : ICompassModule
 
             try
             {
-                SystemObjects.DynamicLinker.LoadModule(assemblyPath, false);
+                SystemObjects.DynamicLinker.LoadModule(assemblyPath, false, false);
             }
             catch (FileLoadException)
             {
