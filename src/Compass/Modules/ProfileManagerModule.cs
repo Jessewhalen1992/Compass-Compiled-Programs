@@ -46,15 +46,19 @@ public class ProfileManagerModule : ICompassModule
 
             try
             {
-                RuntimeSystem.LoadAssembly(assemblyPath);
+                SystemObjects.DynamicLinker.LoadModule(assemblyPath, false);
             }
             catch (FileLoadException)
             {
                 // The assembly has already been loaded in this AutoCAD session.
             }
+            catch (Autodesk.AutoCAD.Runtime.Exception)
+            {
+                // Ignore AutoCAD runtime exceptions triggered by repeated loading attempts.
+            }
             document.SendStringToExecute("profilemanager\n", true, false, false);
         }
-        catch (Exception ex)
+        catch (System.Exception ex)
         {
             Application.ShowAlertDialog($"Failed to launch 3D Profile Manager: {ex.Message}");
         }
