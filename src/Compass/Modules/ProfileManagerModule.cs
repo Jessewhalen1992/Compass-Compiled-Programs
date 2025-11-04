@@ -21,6 +21,18 @@ public class ProfileManagerModule : ICompassModule
     {
         try
         {
+            Application.DocumentManager.ExecuteInApplicationContext(LaunchProfileManager, null);
+        }
+        catch (System.Exception ex)
+        {
+            Application.ShowAlertDialog($"Failed to launch 3D Profile Manager: {ex.Message}");
+        }
+    }
+
+    private static void LaunchProfileManager(object? _)
+    {
+        try
+        {
             var document = Application.DocumentManager.MdiActiveDocument;
             if (document == null)
             {
@@ -56,6 +68,7 @@ public class ProfileManagerModule : ICompassModule
             {
                 // Ignore AutoCAD runtime exceptions triggered by repeated loading attempts.
             }
+
             document.SendStringToExecute("profilemanager\n", true, false, false);
         }
         catch (System.Exception ex)
