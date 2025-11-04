@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using Autodesk.AutoCAD.ApplicationServices;
+using Autodesk.AutoCAD.Runtime;
 
 namespace Compass.Modules;
 
@@ -43,8 +44,14 @@ public class ProfileManagerModule : ICompassModule
                 return;
             }
 
-            var netloadCommand = $@"_.NETLOAD ""{assemblyPath}""\n";
-            document.SendStringToExecute(netloadCommand, true, false, false);
+            try
+            {
+                RuntimeSystem.LoadAssembly(assemblyPath);
+            }
+            catch (FileLoadException)
+            {
+                // The assembly has already been loaded in this AutoCAD session.
+            }
             document.SendStringToExecute("profilemanager\n", true, false, false);
         }
         catch (Exception ex)
