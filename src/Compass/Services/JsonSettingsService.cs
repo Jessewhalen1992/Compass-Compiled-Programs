@@ -1,15 +1,17 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using Autodesk.AutoCAD.ApplicationServices;
 using Compass.Models;
-using Newtonsoft.Json;
+using System.Web.Script.Serialization;
 
 namespace Compass.Services;
 
 public class JsonSettingsService
 {
     private readonly AppSettings _appSettings;
+    private static readonly JavaScriptSerializer Serializer = new();
 
     public JsonSettingsService(AppSettings appSettings)
     {
@@ -30,7 +32,8 @@ public class JsonSettingsService
             Directory.CreateDirectory(directory);
         }
 
-        File.WriteAllText(path, JsonConvert.SerializeObject(state, Formatting.Indented));
+        var json = SerializeIndented(state);
+        File.WriteAllText(path, json);
     }
 
     public DrillGridState Load(int drillCount)
@@ -42,7 +45,7 @@ public class JsonSettingsService
         }
 
         var json = File.ReadAllText(path);
-        var state = JsonConvert.DeserializeObject<DrillGridState>(json) ?? new DrillGridState();
+        var state = Serializer.Deserialize<DrillGridState>(json) ?? new DrillGridState();
         EnsureCount(state.DrillNames, drillCount);
         return state;
     }
@@ -89,6 +92,129 @@ public class JsonSettingsService
             {
                 names.RemoveAt(i);
             }
+        }
+    }
+
+    private static string SerializeIndented(object value)
+    {
+        var json = Serializer.Serialize(value);
+        return FormatJson(json);
+    }
+
+    private static string FormatJson(string json)
+    {
+        if (string.IsNullOrEmpty(json))
+        {
+            return json;
+        }
+
+        var builder = new StringBuilder();
+        var indent = 0;
+        var inQuotes = false;
+        var escape = false;
+
+        foreach (var ch in json)
+        {
+            if (escape)
+            {
+                escape = false;
+                builder.Append(ch);
+                continue;
+            }
+
+            switch (ch)
+            {
+                case '\\':
+                    escape = true;
+                    builder.Append(ch);
+                    break;
+                case '"':
+                    inQuotes = !inQuotes;
+                    builder.Append(ch);
+                    break;
+                case '{':
+                case '[':
+                    builder.Append(ch);
+                    if (!inQuotes)
+                    {
+                        builder.AppendLine();
+                        indent++;
+                        AppendIndent(builder, indent);
+                    }
+                    break;
+                case '}':
+                case ']':
+                    if (!inQuotes)
+                    {
+                        TrimTrailingWhitespace(builder);
+                        if (!EndsWithNewLine(builder))
+                        {
+                            builder.AppendLine();
+                        }
+                        indent = Math.Max(indent - 1, 0);
+                        AppendIndent(builder, indent);
+                    }
+                    builder.Append(ch);
+                    break;
+                case ',':
+                    builder.Append(ch);
+                    if (!inQuotes)
+                    {
+                        builder.AppendLine();
+                        AppendIndent(builder, indent);
+                    }
+                    break;
+                case ':':
+                    builder.Append(ch);
+                    if (!inQuotes)
+                    {
+                        builder.Append(' ');
+                    }
+                    break;
+                default:
+                    if (!inQuotes && char.IsWhiteSpace(ch))
+                    {
+                        break;
+                    }
+
+                    builder.Append(ch);
+                    break;
+            }
+        }
+
+        return builder.ToString();
+    }
+
+    private static void AppendIndent(StringBuilder builder, int indent)
+    {
+        if (indent > 0)
+        {
+            builder.Append(' ', indent * 4);
+        }
+    }
+
+    private static bool EndsWithNewLine(StringBuilder builder)
+    {
+        if (builder.Length == 0)
+        {
+            return false;
+        }
+
+        var last = builder[builder.Length - 1];
+        return last == '\n' || last == '\r';
+    }
+
+    private static void TrimTrailingWhitespace(StringBuilder builder)
+    {
+        while (builder.Length > 0)
+        {
+            var last = builder[builder.Length - 1];
+            if (last == '\n' || last == '\r' || !char.IsWhiteSpace(last))
+            {
+                break;
+            }
+
+            builder.Length--;
         }
     }
 }

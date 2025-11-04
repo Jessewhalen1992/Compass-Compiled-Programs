@@ -61,7 +61,6 @@
 		<PackageReference Include="Microsoft.Extensions.FileProviders.Physical" Version="8.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="8.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
-		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
 		<PackageReference Include="NLog" Version="5.5.0" />
 		<PackageReference Include="EPPlus" Version="8.0.5" />
 		<PackageReference Include="EPPlus.Interfaces" Version="8.0.0" />
