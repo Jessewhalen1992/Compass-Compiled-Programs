@@ -36,7 +36,11 @@ public static class CompassEnvironment
 
             try
             {
-                Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+                var providerType = Type.GetType("System.Text.CodePagesEncodingProvider, System.Text.Encoding.CodePages", throwOnError: false);
+                if (providerType?.GetProperty("Instance")?.GetValue(null) is EncodingProvider provider)
+                {
+                    Encoding.RegisterProvider(provider);
+                }
             }
             catch (Exception ex)
             {
