@@ -33,15 +33,9 @@ Set their **Copy Local** property to `False` to ensure the plug-in binds to the 
 
 ## NuGet Dependencies
 
-`Compass.csproj` relies on a handful of third-party libraries (EPPlus, Newtonsoft.Json, Microsoft.Extensions.* and others). To
-make builds reliable on machines without NuGet connectivity—or with user profiles that include spaces in their path—the
-repository now includes a local package feed in `lib/NuGetPackages` together with a solution-level NuGet configuration file
-(`.nuget/NuGet.Config`). Visual Studio/MSBuild automatically restores packages from this feed and places the expanded contents
-into the solution-local `packages` folder.
+`Compass.csproj` relies on a handful of third-party libraries (EPPlus, Newtonsoft.Json, Microsoft.Extensions.* and others). NuGet restore is enabled through `.nuget/NuGet.Config`, which keeps the standard `nuget.org` feed enabled while adding the bundled `lib/NuGetPackages` folder as a fallback source. Visual Studio/MSBuild will restore packages from nuget.org when you have internet connectivity and fall back to the local feed only when necessary.
 
-If you need to refresh the packages, either delete the `packages` folder and build the solution (NuGet will rehydrate from the
-local feed) or update the packages through Visual Studio's NuGet Package Manager, which will also honor the bundled feed while
-still allowing nuget.org as a fallback.
+If package references appear unresolved, trigger a restore via **Build → Restore NuGet Packages** (or `nuget restore Compass.sln`). You can also delete the solution-local `packages` folder and rebuild; NuGet will reacquire the dependencies from nuget.org by default, using the bundled feed only if the online source is unavailable.
 
 ## Commands
 
