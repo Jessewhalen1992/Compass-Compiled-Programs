@@ -9,7 +9,8 @@ public class SurfaceDevelopmentModule : ManagedPluginModuleBase
 {
     private static readonly string[] CandidatePaths =
     {
-        @"C:\AUTOCAD-SETUP CG\CG_LISP\RES MANAGER\ResidenceSync.DLL"
+        @"C:\AUTOCAD-SETUP CG\CG_LISP\COMPASS\RES MANAGER\ResidenceSync.DLL",
+        @"C:\AUTOCAD-SETUP\Lisp_2000\COMPASS\RES MANAGER\ResidenceSync.DLL"
     };
 
     public override string Id => "surface-development";

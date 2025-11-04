@@ -9,7 +9,8 @@ public class WorkspaceManagerModule : ManagedPluginModuleBase
 {
     private static readonly string[] CandidatePaths =
     {
-        @"C:\AUTOCAD-SETUP CG\CG_LISP\WORKSPACE PROGRAM\MyAutocadProgram.DLL"
+        @"C:\AUTOCAD-SETUP CG\CG_LISP\COMPASS\WORKSPACE PROGRAM\MyAutocadProgram.DLL",
+        @"C:\AUTOCAD-SETUP\Lisp_2000\COMPASS\WORKSPACE PROGRAM\MyAutocadProgram.DLL"
     };
 
     public override string Id => "workspace-manager";

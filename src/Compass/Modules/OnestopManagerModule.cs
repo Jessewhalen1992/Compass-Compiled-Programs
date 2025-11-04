@@ -9,8 +9,8 @@ public class OnestopManagerModule : ManagedPluginModuleBase
 {
     private static readonly string[] CandidatePaths =
     {
-        @"C:\AUTOCAD-SETUP CG\CG_LISP\WELL LICENSE FINALS\WellShapeProgram_Modern.DLL",
-        @"C:\AUTOCAD-SETUP CG\CG_LISP\WELL LICENSE FINALS (2015)\WellShapeProgram_Legacy.DLL",
+        @"C:\AUTOCAD-SETUP CG\CG_LISP\COMPASS\WELL LICENSE FINALS\WellShapeProgram_Modern.DLL",
+        @"C:\AUTOCAD-SETUP CG\CG_LISP\COMPASS\WELL LICENSE FINALS (2015)\WellShapeProgram_Legacy.DLL",
         @"C:\AUTOCAD-SETUP\Lisp_2000\COMPASS\WELL LICENSE FINALS (2015)\WellShapeProgram_Legacy.DLL"
     };
 
