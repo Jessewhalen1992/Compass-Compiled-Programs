@@ -18,5 +18,5 @@ public class CrossingManagerModule : ManagedPluginModuleBase
     public override string Description => "Launch the Xing Manager program.";
 
     protected override IReadOnlyList<string> CandidateDllPaths => CandidatePaths;
-    protected override string CommandName => "crossingmanager";
+    protected override string CommandName => "xingform";
 }

@@ -19,5 +19,5 @@ public class OnestopManagerModule : ManagedPluginModuleBase
     public override string Description => "Launch the Well License OneStop workflow.";
 
     protected override IReadOnlyList<string> CandidateDllPaths => CandidatePaths;
-    protected override string CommandName => "onestopmanager";
+    protected override string CommandName => "expwell";
 }
