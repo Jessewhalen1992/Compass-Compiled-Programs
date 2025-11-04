@@ -1,14 +1,16 @@
 using System;
-using System.Drawing;
-using Autodesk.AutoCAD.Windows;
-using Compass.UI;
+using System.IO;
+using Autodesk.AutoCAD.ApplicationServices;
 
 namespace Compass.Modules;
 
 public class ProfileManagerModule : ICompassModule
 {
-    private PaletteSet? _paletteSet;
-    private ProfileManagerControl? _control;
+    private static readonly string[] AssemblySearchPaths =
+    {
+        @"C:\\AUTOCAD-SETUP CG\\CG_LISP\\COMPASS\\PROFILE PROGRAM\\ProfileCrossings.dll",
+        @"C:\\AUTOCAD-SETUP\\Lisp_2000\\COMPASS\\PROFILE PROGRAM\\ProfileCrossings.dll"
+    };
 
     public string Id => "profile-manager";
     public string DisplayName => "3D Profile Manager";
@@ -16,26 +18,38 @@ public class ProfileManagerModule : ICompassModule
 
     public void Show()
     {
-        if (_paletteSet == null)
+        try
         {
-            _control = new ProfileManagerControl();
-            _paletteSet = CreatePalette();
-            _paletteSet.AddVisual("3D Profile Manager", _control);
+            var document = Application.DocumentManager.MdiActiveDocument;
+            if (document == null)
+            {
+                Application.ShowAlertDialog("No active AutoCAD document.");
+                return;
+            }
+
+            string? assemblyPath = null;
+            foreach (var path in AssemblySearchPaths)
+            {
+                if (File.Exists(path))
+                {
+                    assemblyPath = path;
+                    break;
+                }
+            }
+
+            if (string.IsNullOrEmpty(assemblyPath))
+            {
+                Application.ShowAlertDialog("ProfileCrossings.dll was not found in the expected locations.");
+                return;
+            }
+
+            var netloadCommand = $@"_.NETLOAD \"{assemblyPath}\" ";
+            document.SendStringToExecute(netloadCommand, true, false, false);
+            document.SendStringToExecute("profilemanager ", true, false, false);
         }
-
-        _paletteSet.Visible = true;
-        _paletteSet.Activate(0);
-    }
-
-    private PaletteSet CreatePalette()
-    {
-        var palette = new PaletteSet(DisplayName, new Guid("1c1df9d7-0a89-43b0-b52c-24b7955aa78f"))
+        catch (Exception ex)
         {
-            Style = PaletteSetStyles.ShowCloseButton | PaletteSetStyles.ShowPropertiesMenu | PaletteSetStyles.Snappable,
-            DockEnabled = DockSides.Left | DockSides.Right | DockSides.Top | DockSides.Bottom,
-            MinimumSize = new Size(360, 320)
-        };
-
-        return palette;
+            Application.ShowAlertDialog($"Failed to launch 3D Profile Manager: {ex.Message}");
+        }
     }
 }
