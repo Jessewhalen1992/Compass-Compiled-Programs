@@ -9,7 +9,8 @@ public class CrossingManagerModule : ManagedPluginModuleBase
 {
     private static readonly string[] CandidatePaths =
     {
-        @"C:\AUTOCAD-SETUP CG\CG_LISP\XING MANAGER\XingManager.DLL"
+        @"C:\AUTOCAD-SETUP CG\CG_LISP\COMPASS\XING MANAGER\XingManager.DLL",
+        @"C:\AUTOCAD-SETUP\Lisp_2000\COMPASS\XING MANAGER\XingManager.DLL"
     };
 
     public override string Id => "crossing-manager";

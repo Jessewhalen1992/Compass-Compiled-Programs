@@ -9,7 +9,8 @@ public class HybridManagerModule : ManagedPluginModuleBase
 {
     private static readonly string[] CandidatePaths =
     {
-        @"C:\AUTOCAD-SETUP CG\CG_LISP\HYBRID PROGRAM\HybridProgram_One.DLL"
+        @"C:\AUTOCAD-SETUP CG\CG_LISP\COMPASS\HYBRID PROGRAM\HybridProgram_One.DLL",
+        @"C:\AUTOCAD-SETUP\Lisp_2000\COMPASS\HYBRID PROGRAM\HybridProgram_One.DLL"
     };
 
     public override string Id => "hybrid-manager";
