@@ -1,5 +1,6 @@
 using System;
 using System.Drawing;
+using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.Windows;
 using Compass.Infrastructure;
 using Compass.Infrastructure.Logging;
@@ -16,6 +17,7 @@ public class DrillManagerModule : ICompassModule
     private readonly JsonSettingsService _settingsService;
     private readonly ILog _log;
     private bool _stateLoaded;
+    private string? _activeDocumentName;
 
     public string Id => "drill-manager";
     public string DisplayName => "Drill Manager";
@@ -26,6 +28,17 @@ public class DrillManagerModule : ICompassModule
         CompassEnvironment.Initialize();
         _log = CompassEnvironment.Log;
         _settingsService = new JsonSettingsService(CompassEnvironment.AppSettings);
+
+        try
+        {
+            var documentManager = Application.DocumentManager;
+            _activeDocumentName = documentManager.MdiActiveDocument?.Name;
+            documentManager.DocumentActivated += OnDocumentActivated;
+        }
+        catch (Exception ex)
+        {
+            _log.Warn($"Failed to subscribe to document events: {ex.Message}");
+        }
     }
 
     internal DrillManagerControl Control => _control ??= CreateControl();
@@ -120,6 +133,33 @@ public class DrillManagerModule : ICompassModule
         catch (Exception ex)
         {
             _log.Error("Failed to save drill state", ex);
+        }
+    }
+
+    private void OnDocumentActivated(object? sender, DocumentCollectionEventArgs e)
+    {
+        var documentName = e.Document?.Name;
+        if (string.Equals(_activeDocumentName, documentName, StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        _activeDocumentName = documentName;
+        _stateLoaded = false;
+
+        if (_control is not { } control)
+        {
+            return;
+        }
+
+        var dispatcher = control.Dispatcher;
+        if (dispatcher?.CheckAccess() == true)
+        {
+            EnsureStateLoaded(control.ViewModel);
+        }
+        else
+        {
+            dispatcher?.BeginInvoke(new Action(() => EnsureStateLoaded(control.ViewModel)));
         }
     }
 }
