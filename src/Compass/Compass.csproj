@@ -7,7 +7,7 @@
 		<AssemblyName>Compass</AssemblyName>
 		<LangVersion>latest</LangVersion>
 		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-		<!-- Ensure NuGet DLLs are copied for Costura embedding -->
+		<!-- Ensure NuGet DLLs are copied so Costura can embed them -->
 		<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
 	</PropertyGroup>
 
@@ -21,6 +21,7 @@
 		<AutoCADReferencePath Condition="'$(AutoCADReferencePath)' == ''">
 			C:\Program Files\Autodesk\AutoCAD 2022
 		</AutoCADReferencePath>
+		<!-- Trim any trailing backslashes -->
 		<AutoCADReferencePath>$([System.String]::Copy('$(AutoCADReferencePath)').TrimEnd('\'))</AutoCADReferencePath>
 	</PropertyGroup>
 
@@ -28,47 +29,62 @@
 	<ItemGroup>
 		<!-- Map 3D managed API if installed -->
 		<Reference Include="accoremgd">
-		  <HintPath>..\..\..\..\..\..\Program Files\Autodesk\AutoCAD 2022\accoremgd.dll</HintPath>
+			<HintPath>..\..\..\..\..\..\Program Files\Autodesk\AutoCAD 2022\accoremgd.dll</HintPath>
 		</Reference>
 		<Reference Include="Acdbmgd">
-		  <HintPath>..\..\..\..\..\..\Program Files\Autodesk\AutoCAD 2022\acdbmgd.dll</HintPath>
+			<HintPath>..\..\..\..\..\..\Program Files\Autodesk\AutoCAD 2022\acdbmgd.dll</HintPath>
 		</Reference>
 		<Reference Include="acdbmgdbrep">
-		  <HintPath>..\..\..\..\..\..\Program Files\Autodesk\AutoCAD 2022\acdbmgdbrep.dll</HintPath>
+			<HintPath>..\..\..\..\..\..\Program Files\Autodesk\AutoCAD 2022\acdbmgdbrep.dll</HintPath>
 		</Reference>
 		<Reference Include="Acmgd">
-		  <HintPath>..\..\..\..\..\..\Program Files\Autodesk\AutoCAD 2022\acmgd.dll</HintPath>
+			<HintPath>..\..\..\..\..\..\Program Files\Autodesk\AutoCAD 2022\acmgd.dll</HintPath>
 		</Reference>
 		<Reference Include="AdWindows">
-		  <HintPath>..\..\..\..\..\..\Program Files\Autodesk\AutoCAD 2022\AdWindows.dll</HintPath>
+			<HintPath>..\..\..\..\..\..\Program Files\Autodesk\AutoCAD 2022\AdWindows.dll</HintPath>
 		</Reference>
 		<Reference Include="ManagedMapApi" Condition="Exists('$(AutoCADReferencePath)\Map\ManagedMapApi.dll')">
 			<HintPath>$(AutoCADReferencePath)\Map\ManagedMapApi.dll</HintPath>
 			<Private>false</Private>
 			<SpecificVersion>false</SpecificVersion>
 		</Reference>
+		<!-- Fallback if ManagedMapApi isn't found in AutoCADReferencePath -->
 		<Reference Include="ManagedMapApi">
-		  <HintPath>..\..\..\..\..\..\Program Files\Autodesk\AutoCAD 2022\Map\ManagedMapApi.dll</HintPath>
+			<HintPath>..\..\..\..\..\..\Program Files\Autodesk\AutoCAD 2022\Map\ManagedMapApi.dll</HintPath>
 		</Reference>
 	</ItemGroup>
 
-	<!-- NuGet packages (Configuration + EPPlus + NLog + Abstractions) -->
-        <ItemGroup>
-                <PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
-                <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.0" />
-                <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="8.0.0" />
-                <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="8.0.0" />
-                <PackageReference Include="Microsoft.Extensions.FileProviders.Physical" Version="8.0.0" />
-                <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="8.0.0" />
-                <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
-                <PackageReference Include="NLog" Version="5.5.0" />
-                <PackageReference Include="EPPlus" Version="8.0.5" />
-                <PackageReference Include="EPPlus.Interfaces" Version="8.0.0" />
-                <PackageReference Include="EPPlus.System.Drawing" Version="8.0.0" />
-                <PackageReference Include="System.Text.Json" Version="8.0.0" />
-                <PackageReference Include="Fody" PrivateAssets="All" />
-                <PackageReference Include="Costura.Fody" PrivateAssets="All" />
-        </ItemGroup>
+	<!-- NuGet packages -->
+	<ItemGroup>
+		<!-- Configuration and logging packages -->
+		<PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="8.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="8.0.0" />
+		<PackageReference Include="Microsoft.Extensions.FileProviders.Physical" Version="8.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="8.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
+
+		<!-- Logging -->
+		<PackageReference Include="NLog" Version="5.5.0" />
+
+		<!-- Excel library -->
+		<PackageReference Include="EPPlus" Version="8.0.5" />
+		<PackageReference Include="EPPlus.Interfaces" Version="8.0.0" />
+		<PackageReference Include="EPPlus.System.Drawing" Version="8.0.0" />
+		<PackageReference Include="System.Buffers" Version="4.6.1" />
+		<PackageReference Include="System.Numerics.Vectors" Version="4.5.0" />
+		<PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.0.0" />
+
+		<!-- JSON library. 8.0.0 is vulnerable to CVE-2024-43485; use patched 8.0.5 -->
+		<PackageReference Include="System.Text.Json" Version="8.0.5" />
+
+		<!-- Fody weaving and Costura for embedding dependencies. Specify explicit versions to satisfy NU1604 -->
+		<PackageReference Include="Fody" Version="6.9.3" PrivateAssets="all" />
+		<PackageReference Include="Costura.Fody" Version="6.0.0" PrivateAssets="all" />
+		<PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.4" />
+		<PackageReference Include="System.ValueTuple" Version="4.5.0" />
+	</ItemGroup>
 
 	<!-- XAML code-behind nesting -->
 	<ItemGroup>
@@ -83,7 +99,7 @@
 		</Compile>
 	</ItemGroup>
 
-	<!-- Content -->
+	<!-- Content files -->
 	<ItemGroup>
 		<None Update="appsettings.json">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
