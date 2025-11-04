@@ -1,0 +1,21 @@
+using System.Collections.Generic;
+
+namespace Compass.Modules;
+
+/// <summary>
+/// Launches the Workspace Manager tooling by loading MyAutocadProgram.dll and invoking its command.
+/// </summary>
+public class WorkspaceManagerModule : ManagedPluginModuleBase
+{
+    private static readonly string[] CandidatePaths =
+    {
+        @"C:\AUTOCAD-SETUP CG\CG_LISP\WORKSPACE PROGRAM\MyAutocadProgram.DLL"
+    };
+
+    public override string Id => "workspace-manager";
+    public override string DisplayName => "Workspace Manager";
+    public override string Description => "Launch the Workspace configuration manager.";
+
+    protected override IReadOnlyList<string> CandidateDllPaths => CandidatePaths;
+    protected override string CommandName => "workspacemanager";
+}

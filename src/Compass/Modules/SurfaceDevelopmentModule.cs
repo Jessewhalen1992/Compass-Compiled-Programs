@@ -1,0 +1,21 @@
+using System.Collections.Generic;
+
+namespace Compass.Modules;
+
+/// <summary>
+/// Launches the Surface Development tooling by loading ResidenceSync.dll and invoking its command.
+/// </summary>
+public class SurfaceDevelopmentModule : ManagedPluginModuleBase
+{
+    private static readonly string[] CandidatePaths =
+    {
+        @"C:\AUTOCAD-SETUP CG\CG_LISP\RES MANAGER\ResidenceSync.DLL"
+    };
+
+    public override string Id => "surface-development";
+    public override string DisplayName => "Surface Development";
+    public override string Description => "Launch the Residence Sync manager.";
+
+    protected override IReadOnlyList<string> CandidateDllPaths => CandidatePaths;
+    protected override string CommandName => "surfacedevelopment";
+}
