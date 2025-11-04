@@ -11,7 +11,7 @@ namespace Compass.Modules;
 /// Base implementation for Compass modules that load a managed AutoCAD plug-in
 /// from disk and invoke a command exposed via <see cref="CommandMethodAttribute"/>.
 /// </summary>
-internal abstract class ManagedPluginModuleBase : ICompassModule
+public abstract class ManagedPluginModuleBase : ICompassModule
 {
     /// <summary>
     /// A unique identifier for the module; used as the key when registering with the launcher.
