@@ -69,6 +69,7 @@ public class CompassApplication : IExtensionApplication
         RegisterModule(new SurfaceDevelopmentModule());
         RegisterModule(new CrossingManagerModule());
         RegisterModule(new HybridManagerModule());
+        RegisterModule(new CogoProgramModule());
         RegisterModule(new WorkspaceManagerModule());
         RegisterModule(new OnestopManagerModule());
     }
