@@ -65,6 +65,7 @@ public class CompassApplication : IExtensionApplication
 
         RegisterModule(new DrillManagerModule());
         RegisterModule(new ProfileManagerModule());
+        RegisterModule(new SectionGeneratorModule());
         RegisterModule(new SurfaceDevelopmentModule());
         RegisterModule(new CrossingManagerModule());
         RegisterModule(new HybridManagerModule());
