@@ -21,7 +21,7 @@ public class DrillManagerModule : ICompassModule
 
     public string Id => "drill-manager";
     public string DisplayName => "Drill Manager";
-    public string Description => "Manage drill definitions with support for up to 20 drills.";
+    public string Description => "Manage Drill names and Generate Coordinates";
 
     public DrillManagerModule()
     {

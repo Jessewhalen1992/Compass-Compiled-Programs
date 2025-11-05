@@ -15,7 +15,7 @@ public class SurfaceDevelopmentModule : ManagedPluginModuleBase
 
     public override string Id => "surface-development";
     public override string DisplayName => "Surface Development";
-    public override string Description => "Launch the Residence Sync manager.";
+    public override string Description => "Generate Surf Developments, Manage Residences";
 
     protected override IReadOnlyList<string> CandidateDllPaths => CandidatePaths;
     protected override string CommandName => "RSUI";

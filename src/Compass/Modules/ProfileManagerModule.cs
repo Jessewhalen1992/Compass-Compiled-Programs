@@ -17,7 +17,7 @@ public class ProfileManagerModule : ManagedPluginModuleBaseB
 
     public override string Id => "profile-manager";
     public override string DisplayName => "3D Profile Manager";
-    public override string Description => "Launch the Profile‑Xing‑Gen tooling.";
+    public override string Description => "Generate Profiles and Cross-sections";
 
     protected override IReadOnlyList<string> CandidateDllPaths => CandidatePaths;
     protected override string CommandName => "profilemanager";

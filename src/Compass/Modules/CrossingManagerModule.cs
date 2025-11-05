@@ -15,7 +15,7 @@ public class CrossingManagerModule : ManagedPluginModuleBase
 
     public override string Id => "crossing-manager";
     public override string DisplayName => "Crossing Manager";
-    public override string Description => "Launch the Xing Manager program.";
+    public override string Description => "Manage Crossing bubbles and Tables";
 
     protected override IReadOnlyList<string> CandidateDllPaths => CandidatePaths;
     protected override string CommandName => "xingform";
