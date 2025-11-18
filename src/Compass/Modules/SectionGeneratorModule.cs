@@ -10,8 +10,8 @@ public class SectionGeneratorModule : ManagedPluginModuleBase
 {
     private static readonly string[] CandidatePaths =
     {
-        @"C:\\AUTOCAD-SETUP CG\\CG_LISP\\COMPASS\\SECTION GENERATOR\\SECTION GENERATOR.dll",
-        @"C:\\AUTOCAD-SETUP\\Lisp_2000\\COMPASS\\SECTION GENERATOR\\SECTION GENERATOR.dll"
+        @"C:\\AUTOCAD-SETUP CG\\CG_LISP\\COMPASS\\SECTION GENERATOR\\SECTIONGENERATOR.dll",
+        @"C:\\AUTOCAD-SETUP\\Lisp_2000\\COMPASS\\SECTION GENERATOR\\SECTIONGENERATOR.dll"
     };
 
     public override string Id => "section-generator";
