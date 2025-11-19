@@ -32,8 +32,8 @@ public class DrillCadToolService
     private const string CordsDirectory = @"C:\\CORDS";
     private static readonly string[] CordsExecutableSearchPaths =
     {
-        @"C:\\AUTOCAD-SETUP CG\\CG_LISP\\COMPASS\\cord.exe",
-        @"C:\\AUTOCAD-SETUP\\Lisp_2000\\DRILL PROPERTIES\\cord.exe"
+        @"C:\\AUTOCAD-SETUP CG\\CG_LISP\\COMPASS\\cords.exe",
+        @"C:\\AUTOCAD-SETUP\\Lisp_2000\\DRILL PROPERTIES\\cords.exe"
     };
 
     private readonly ILog _log;
