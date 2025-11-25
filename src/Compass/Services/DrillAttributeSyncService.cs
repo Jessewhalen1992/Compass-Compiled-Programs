@@ -248,7 +248,7 @@ public class DrillAttributeSyncService
                         continue;
                     }
 
-                    if (attribute.Tag.Equals(tag, StringComparison.OrdinalIgnoreCase))
+                    if (AutoCADBlockService.TagMatches(attribute.Tag, tag))
                     {
                         attribute.TextString = newValue;
                         updated++;
@@ -377,7 +377,7 @@ public class DrillAttributeSyncService
                 continue;
             }
 
-            if (attribute.Tag.Equals(tag, StringComparison.OrdinalIgnoreCase))
+            if (AutoCADBlockService.TagMatches(attribute.Tag, tag))
             {
                 attribute.TextString = newValue;
             }

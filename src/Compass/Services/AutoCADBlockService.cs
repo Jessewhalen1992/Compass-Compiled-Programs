@@ -22,7 +22,7 @@ public class AutoCADBlockService
         foreach (ObjectId attributeId in blockReference.AttributeCollection)
         {
             if (transaction.GetObject(attributeId, OpenMode.ForRead) is AttributeReference attributeReference &&
-                attributeReference.Tag.Equals(tag, StringComparison.OrdinalIgnoreCase))
+                TagMatches(attributeReference.Tag, tag))
             {
                 return attributeReference.TextString.Trim();
             }
@@ -46,7 +46,7 @@ public class AutoCADBlockService
         foreach (ObjectId attributeId in blockReference.AttributeCollection)
         {
             if (transaction.GetObject(attributeId, OpenMode.ForWrite) is AttributeReference attributeReference &&
-                attributeReference.Tag.Equals(tag, StringComparison.OrdinalIgnoreCase))
+                TagMatches(attributeReference.Tag, tag))
             {
                 attributeReference.TextString = newValue;
             }
@@ -82,5 +82,28 @@ public class AutoCADBlockService
 
             return results;
         });
+    }
+
+    internal static bool TagMatches(string attributeTag, string targetTag)
+    {
+        attributeTag ??= string.Empty;
+        targetTag ??= string.Empty;
+
+        if (attributeTag.Equals(targetTag, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        return NormalizeTag(attributeTag).Equals(NormalizeTag(targetTag), StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string NormalizeTag(string tag)
+    {
+        return string.IsNullOrWhiteSpace(tag)
+            ? string.Empty
+            : tag.Replace("_", string.Empty)
+                .Replace("-", string.Empty)
+                .Replace(" ", string.Empty)
+                .Trim();
     }
 }
