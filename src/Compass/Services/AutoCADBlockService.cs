@@ -84,7 +84,7 @@ public class AutoCADBlockService
         });
     }
 
-    private static bool TagMatches(string attributeTag, string targetTag)
+    public static bool TagMatches(string attributeTag, string targetTag)
     {
         return NormalizeTag(attributeTag).Equals(NormalizeTag(targetTag), StringComparison.OrdinalIgnoreCase);
     }
