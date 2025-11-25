@@ -1012,7 +1012,7 @@ public class DrillCadToolService
         foreach (ObjectId id in blockReference.AttributeCollection)
         {
             if (transaction.GetObject(id, OpenMode.ForRead) is AttributeReference attribute &&
-                attribute.Tag.Equals(tag, StringComparison.OrdinalIgnoreCase))
+                AutoCADBlockService.TagMatches(attribute.Tag, tag))
             {
                 return attribute.TextString.Trim();
             }
