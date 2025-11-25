@@ -66,7 +66,16 @@ public class JsonSettingsService
 
             var parts = drawingName.Split('-');
             var prefix = parts.Length >= 2 ? $"{parts[0]}-{parts[1]}" : drawingName;
-            return Path.Combine(directory ?? string.Empty, $"{prefix}.json");
+
+            if (!string.IsNullOrEmpty(directory))
+            {
+                return Path.Combine(directory, $"{prefix}.json");
+            }
+
+            if (!string.IsNullOrWhiteSpace(prefix))
+            {
+                return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{prefix}.json");
+            }
         }
 
         var fallback = _appSettings.JsonConfigName;
