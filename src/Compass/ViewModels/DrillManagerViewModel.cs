@@ -655,20 +655,29 @@ public class DrillManagerViewModel : INotifyPropertyChanged
             return;
         }
 
-        var limit = Math.Min(results.Count, DrillCount);
-        for (var i = 0; i < limit; i++)
+        // Suppress state change events while we batch update to avoid multiple JSON saves.
+        _stateChangeSuppressionCount++;
+        try
         {
-            var name = results[i] ?? string.Empty;
-            DrillProps.SetDrillProp(i + 1, name);
-            Drills[i].Name = name;
-            Drills[i].Commit();
-            SetCommittedName(i + 1, name);
+            var limit = Math.Min(results.Count, DrillCount);
+            for (var i = 0; i < limit; i++)
+            {
+                var name = results[i] ?? string.Empty;
+                DrillProps.SetDrillProp(i + 1, name);
+                Drills[i].Name = name;
+                Drills[i].Commit();
+                SetCommittedName(i + 1, name);
+            }
+
+            ClearCommittedBeyondCount();
+            RefreshSelectedName();
+        }
+        finally
+        {
+            // Resume notifications so a single save occurs after the batch update completes.
+            ResumeStateNotifications(skipPendingRaise: false);
         }
 
-        ClearCommittedBeyondCount();
-
-        RefreshSelectedName();
-        RaiseStateChanged();
         MessageBox.Show("Form fields updated from block attributes.", "Update", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
