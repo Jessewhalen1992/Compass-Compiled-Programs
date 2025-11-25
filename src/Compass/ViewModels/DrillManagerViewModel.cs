@@ -658,14 +658,17 @@ public class DrillManagerViewModel : INotifyPropertyChanged
         var limit = Math.Min(results.Count, DrillCount);
         for (var i = 0; i < limit; i++)
         {
-            DrillProps.SetDrillProp(i + 1, results[i]);
+            var name = results[i] ?? string.Empty;
+            DrillProps.SetDrillProp(i + 1, name);
+            Drills[i].Name = name;
             Drills[i].Commit();
-            SetCommittedName(i + 1, Drills[i].Name);
+            SetCommittedName(i + 1, name);
         }
 
         ClearCommittedBeyondCount();
 
         RefreshSelectedName();
+        RaiseStateChanged();
         MessageBox.Show("Form fields updated from block attributes.", "Update", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
