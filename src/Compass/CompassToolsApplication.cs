@@ -1,0 +1,174 @@
+using System;
+using System.IO;
+using System.Linq;
+using Autodesk.AutoCAD.ApplicationServices;
+using Autodesk.AutoCAD.Runtime;
+using Autodesk.AutoCAD.Windows;
+using Compass.UI;
+using Compass.ViewModels;
+
+[assembly: CommandClass(typeof(Compass.CompassToolsApplication))]
+
+namespace Compass;
+
+public class CompassToolsApplication : IExtensionApplication
+{
+    private const string PrimaryRoot = @"C:\\AUTOCAD-SETUP CG\\CG_LISP";
+    private const string FallbackRoot = @"C:\\AUTOCAD-SETUP\\Lisp_2000";
+
+    private static readonly LispToolDefinition[] Tools =
+    {
+        new("rename-layouts", "Rename Layouts", "Rename/Renumber Layouts", "COMPASS\\MISC TOOLS\\Rename Layouts.fas", "RenameLayouts"),
+        new("clean-drawing", "Clean Drawing", "Clean Drawings for Clients", "COMPASS\\MISC TOOLS\\cleandwg.fas", "cleandwg"),
+        new("bend-table", "Bend Table", "Generate Bend Table With Bubbles", "COMPASS\\MISC TOOLS\\BendTable with bubbles.fas", "bt"),
+        new("fnc", "FNC", "Convert linework to FNC Plan", "COMPASS\\MISC TOOLS\\FNC.fas", "FNC"),
+        new("iop-maker", "IOP Maker", "Automatically Make IOP Page", "COMPASS\\MISC TOOLS\\iop maker.fas", "createiop"),
+        new("dim-perp", "Dim Perp", "Measure From Point to a Perpendicular Line", "COMPASS\\MISC TOOLS\\DimPerp.fas", "dimperp"),
+        new("renumber-workspace", "Renumber Workspace", "Renumber workspace based on a Polyline", "COMPASS\\MISC TOOLS\\RENUMBERWORKSPACE V1.fas", "RNW"),
+        new("tie-text", "Tie Text", "Add \"(Tie\" to end of a text", "COMPASS\\MISC TOOLS\\iop maker.fas", "tie"),
+        new("sum-values", "Sum Values", "Add up Values of Text/Mtext", "COMPASS\\MISC TOOLS\\sumvalue.fas", "sv"),
+        new("delete-data-links", "Delete Data Links", "Remove all Data Links From Current Drawing", "COMPASS\\MISC TOOLS\\deletedatalinks.fas", "DDL"),
+        new("convert-text-styles", "Convert Text Styles", "Convert Old Text Style to New", "COMPASS\\MISC TOOLS\\convertxt.fas", "CTS"),
+        new("round-bearing-distances", "Round Bearing/Distances", "Round Survey B/Ds to Sketch B/Ds", "COMPASS\\MISC TOOLS\\rdtxt.fas", "rdtxt")
+    };
+
+    private static PaletteSet? _palette;
+    private static CompassControl? _control;
+
+    public void Initialize()
+    {
+    }
+
+    public void Terminate()
+    {
+        if (_palette != null)
+        {
+            _palette.Visible = false;
+            _palette.Dispose();
+            _palette = null;
+        }
+    }
+
+    [CommandMethod("Ctools", CommandFlags.Modal | CommandFlags.Session)]
+    public static void ShowCompassTools()
+    {
+        EnsurePalette();
+        if (_palette != null)
+        {
+            _palette.Visible = true;
+            _palette.Activate(0);
+        }
+    }
+
+    private static void EnsurePalette()
+    {
+        if (_palette != null)
+        {
+            return;
+        }
+
+        _control = new CompassControl
+        {
+            TitleText = "Compass Tools",
+            SubtitleText = "Select a program to launch."
+        };
+
+        _control.ModuleRequested += OnToolRequested;
+        _control.LoadModules(Tools.Select((tool, index) => new CompassModuleDefinition(tool.Id, tool.DisplayName, tool.Description, index)));
+
+        _palette = new PaletteSet("Compass Tools", new Guid("f33e2ff0-2b0c-4d54-9c8c-80b9c8df4b36"))
+        {
+            Style = PaletteSetStyles.ShowCloseButton | PaletteSetStyles.ShowPropertiesMenu | PaletteSetStyles.Snappable,
+            DockEnabled = DockSides.Left | DockSides.Right | DockSides.Top | DockSides.Bottom,
+            Visible = false
+        };
+
+        _palette.MinimumSize = new System.Drawing.Size(320, 240);
+        _palette.AddVisual("Tools", _control);
+    }
+
+    private static void OnToolRequested(object? sender, string toolId)
+    {
+        var tool = Tools.FirstOrDefault(t => t.Id.Equals(toolId, StringComparison.OrdinalIgnoreCase));
+        if (tool == null)
+        {
+            return;
+        }
+
+        LaunchTool(tool);
+    }
+
+    private static void LaunchTool(LispToolDefinition tool)
+    {
+        var document = Application.DocumentManager.MdiActiveDocument;
+        if (document == null)
+        {
+            Application.ShowAlertDialog("Open a drawing first.");
+            return;
+        }
+
+        var basePath = Directory.Exists(PrimaryRoot) ? PrimaryRoot : FallbackRoot;
+        var fullPath = Path.Combine(basePath, tool.RelativePath);
+
+        if (!File.Exists(fullPath))
+        {
+            Application.ShowAlertDialog($"{tool.DisplayName} is unavailable because the script could not be found:\n{fullPath}");
+            return;
+        }
+
+        var folder = Path.GetDirectoryName(fullPath);
+        if (!string.IsNullOrWhiteSpace(folder))
+        {
+            TrustPathIfNeeded(folder);
+        }
+
+        var escapedPath = fullPath.Replace("\\", "\\\\");
+
+        document.SendStringToExecute("\u001B\u001B", true, false, false);
+        document.SendStringToExecute($"(load \"{escapedPath}\") ", true, false, false);
+        document.SendStringToExecute($"{tool.CommandName}\n", true, false, false);
+    }
+
+    private static void TrustPathIfNeeded(string folder)
+    {
+        short secureLoad = 0;
+
+        try
+        {
+            object value = Application.GetSystemVariable("SECURELOAD");
+            secureLoad = Convert.ToInt16(value);
+        }
+        catch
+        {
+            // Ignore SECURELOAD probing failures.
+        }
+
+        if (secureLoad == 0)
+        {
+            return;
+        }
+
+        try
+        {
+            var current = Convert.ToString(Application.GetSystemVariable("TRUSTEDPATHS")) ?? string.Empty;
+            var normalized = folder.EndsWith("\\", StringComparison.Ordinal) ? folder : folder + "\\";
+            var paths = current.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(p => p.Trim());
+
+            if (!paths.Contains(normalized, StringComparer.OrdinalIgnoreCase))
+            {
+                var updated = string.IsNullOrEmpty(current)
+                    ? normalized
+                    : $"{current};{normalized}";
+
+                Application.SetSystemVariable("TRUSTEDPATHS", updated);
+            }
+        }
+        catch
+        {
+            // Non-fatal. If TRUSTEDPATHS can't be updated the user can add it manually.
+        }
+    }
+
+    private record LispToolDefinition(string Id, string DisplayName, string Description, string RelativePath, string CommandName);
+}
