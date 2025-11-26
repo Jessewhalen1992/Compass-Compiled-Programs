@@ -17,6 +17,24 @@ public partial class CompassControl : UserControl
         ModulesList.ItemsSource = _modules;
     }
 
+    public static readonly DependencyProperty TitleTextProperty = DependencyProperty.Register(
+        nameof(TitleText), typeof(string), typeof(CompassControl), new PropertyMetadata("Compass"));
+
+    public static readonly DependencyProperty SubtitleTextProperty = DependencyProperty.Register(
+        nameof(SubtitleText), typeof(string), typeof(CompassControl), new PropertyMetadata("Select a program to launch."));
+
+    public string TitleText
+    {
+        get => (string)GetValue(TitleTextProperty);
+        set => SetValue(TitleTextProperty, value);
+    }
+
+    public string SubtitleText
+    {
+        get => (string)GetValue(SubtitleTextProperty);
+        set => SetValue(SubtitleTextProperty, value);
+    }
+
     public event EventHandler<string>? ModuleRequested;
 
     public void LoadModules(params CompassModuleDefinition[] modules)

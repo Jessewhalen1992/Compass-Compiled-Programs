@@ -13,8 +13,12 @@
         </Grid.RowDefinitions>
 
         <StackPanel Grid.Row="0" Margin="0,0,0,12">
-            <TextBlock Text="Compass" FontSize="20" FontWeight="Bold" />
-            <TextBlock Text="Select a program to launch." FontSize="12" Foreground="Gray" />
+            <TextBlock Text="{Binding TitleText, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                       FontSize="20"
+                       FontWeight="Bold" />
+            <TextBlock Text="{Binding SubtitleText, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                       FontSize="12"
+                       Foreground="Gray" />
         </StackPanel>
 
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
