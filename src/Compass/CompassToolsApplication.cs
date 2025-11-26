@@ -107,12 +107,18 @@ public class CompassToolsApplication : IExtensionApplication
             return;
         }
 
-        var basePath = Directory.Exists(PrimaryRoot) ? PrimaryRoot : FallbackRoot;
-        var fullPath = Path.Combine(basePath, tool.RelativePath);
-
-        if (!File.Exists(fullPath))
+        var candidatePaths = new[]
         {
-            Application.ShowAlertDialog($"{tool.DisplayName} is unavailable because the script could not be found:\n{fullPath}");
+            Path.Combine(PrimaryRoot, tool.RelativePath),
+            Path.Combine(FallbackRoot, tool.RelativePath)
+        };
+
+        var fullPath = candidatePaths.FirstOrDefault(File.Exists);
+
+        if (string.IsNullOrWhiteSpace(fullPath))
+        {
+            var message = string.Join("\n", candidatePaths.Select(p => $" • {p}"));
+            Application.ShowAlertDialog($"{tool.DisplayName} is unavailable because the script could not be found in either location:\n{message}");
             return;
         }
 
