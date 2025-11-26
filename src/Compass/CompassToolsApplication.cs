@@ -13,8 +13,8 @@ namespace Compass;
 
 public class CompassToolsApplication : IExtensionApplication
 {
-    private const string PrimaryRoot = @"C:\\AUTOCAD-SETUP CG\\CG_LISP";
-    private const string FallbackRoot = @"C:\\AUTOCAD-SETUP\\Lisp_2000";
+    private const string PrimaryRoot = @"C:\AUTOCAD-SETUP CG\CG_LISP";
+    private const string FallbackRoot = @"C:\AUTOCAD-SETUP\Lisp_2000";
 
     private static readonly LispToolDefinition[] Tools =
     {
