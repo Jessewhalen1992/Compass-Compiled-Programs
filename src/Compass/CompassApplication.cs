@@ -28,6 +28,7 @@ public class CompassApplication : IExtensionApplication
         new FormatTablesApplication().Initialize();
         new CompassToolsApplication().Initialize();
         new CompassLegalApplication().Initialize();
+        new CogoApplication().Initialize();
     }
 
     public void Terminate()
@@ -69,7 +70,6 @@ public class CompassApplication : IExtensionApplication
         RegisterModule(new SurfaceDevelopmentModule());
         RegisterModule(new CrossingManagerModule());
         RegisterModule(new HybridManagerModule());
-        RegisterModule(new CogoProgramModule());
         RegisterModule(new WorkspaceManagerModule());
         RegisterModule(new OnestopManagerModule());
     }
