@@ -2,7 +2,12 @@ using System;
 using System.Text;
 using Compass.Infrastructure.Logging;
 using Compass.Models;
+#if NET48
 using Microsoft.Extensions.Configuration;
+#else
+using Newtonsoft.Json;
+using System.IO;
+#endif
 
 namespace Compass.Infrastructure;
 
@@ -13,7 +18,9 @@ public static class CompassEnvironment
 {
     private static readonly object SyncRoot = new();
     private static bool _initialized;
+#if NET48
     private static IConfigurationRoot? _configuration;
+#endif
     private static AppSettings _appSettings = new();
     private static ILog _log = new NLogLogger();
 
@@ -49,6 +56,7 @@ public static class CompassEnvironment
 
             try
             {
+#if NET48
                 _configuration = new ConfigurationBuilder()
                     .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
                     .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
@@ -59,11 +67,22 @@ public static class CompassEnvironment
                 _appSettings = settings;
 
                 _log = new NLogLogger(_configuration);
+#else
+                var appsettingsPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "appsettings.json");
+                var settings = new AppSettings();
+                if (File.Exists(appsettingsPath))
+                {
+                    var json = File.ReadAllText(appsettingsPath);
+                    var loaded = JsonConvert.DeserializeObject<AppSettings>(json);
+                    if (loaded != null) settings = loaded;
+                }
+                _appSettings = settings;
+                _log = new NLogLogger();
+#endif
             }
             catch (Exception ex)
             {
                 _log.Warn($"Failed to load configuration: {ex.Message}");
-                _configuration = null;
                 _appSettings = new AppSettings();
             }
 
@@ -71,8 +90,10 @@ public static class CompassEnvironment
         }
     }
 
+#if NET48
     public static IConfiguration Configuration
         => (_configuration ?? new ConfigurationBuilder().Build());
+#endif
 
     public static AppSettings AppSettings => _appSettings;
 
