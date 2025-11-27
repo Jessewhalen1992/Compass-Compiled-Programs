@@ -39,6 +39,8 @@ public class FormatTablesApplication : IExtensionApplication
 
     public void Initialize()
     {
+        // Preload the Format Tables palette during initialization so the tab is ready when needed
+        EnsurePalette();
     }
 
     public void Terminate()
