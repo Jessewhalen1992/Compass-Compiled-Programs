@@ -8,6 +8,7 @@ using Compass.Modules;
 using Compass.UI;
 using Compass.ViewModels;
 
+[assembly: ExtensionApplication(typeof(Compass.CompassApplication))]
 [assembly: CommandClass(typeof(Compass.CompassApplication))]
 
 namespace Compass;
