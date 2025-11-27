@@ -38,7 +38,7 @@ public class DrillAttributeSyncService
 
         if (drillCount <= 0)
         {
-            return Array.Empty<string>();
+            return new string[0];
         }
 
         var editor = document.Editor;

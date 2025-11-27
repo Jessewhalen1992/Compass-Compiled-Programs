@@ -1,4 +1,5 @@
 using System;
+using System.Reflection;
 using System.Text;
 using Compass.Infrastructure.Logging;
 using Compass.Models;
@@ -24,6 +25,31 @@ public static class CompassEnvironment
     private static AppSettings _appSettings = new();
     private static ILog _log = new NLogLogger();
 
+    private static void RegisterCodePageEncodings()
+    {
+        // Look for Encoding.RegisterProvider via reflection; this method is only
+        // present in .NET 4.6+.  Skip registration on .NET 4.5.
+        var registerProvider = typeof(Encoding).GetMethod(
+            "RegisterProvider",
+            BindingFlags.Public | BindingFlags.Static);
+
+        if (registerProvider != null)
+        {
+            // Load System.Text.CodePagesEncodingProvider from System.Text.Encoding.CodePages
+            var providerType = Type.GetType(
+                "System.Text.CodePagesEncodingProvider, System.Text.Encoding.CodePages");
+            var instanceProp = providerType?.GetProperty(
+                "Instance",
+                BindingFlags.Public | BindingFlags.Static);
+            var providerInstance = instanceProp?.GetValue(null);
+            if (providerInstance != null)
+            {
+                // Call Encoding.RegisterProvider(providerInstance)
+                registerProvider.Invoke(null, new[] { providerInstance });
+            }
+        }
+    }
+
     /// <summary>
     /// Ensures environment initialization occurs exactly once.
     /// </summary>
@@ -41,18 +67,7 @@ public static class CompassEnvironment
                 return;
             }
 
-            try
-            {
-                var providerType = Type.GetType("System.Text.CodePagesEncodingProvider, System.Text.Encoding.CodePages", throwOnError: false);
-                if (providerType?.GetProperty("Instance")?.GetValue(null) is EncodingProvider provider)
-                {
-                    Encoding.RegisterProvider(provider);
-                }
-            }
-            catch (Exception ex)
-            {
-                _log.Warn($"Failed to register code page provider: {ex.Message}");
-            }
+            RegisterCodePageEncodings();
 
             try
             {

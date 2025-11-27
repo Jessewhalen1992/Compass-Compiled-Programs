@@ -52,7 +52,7 @@ public class DrillCadToolService
         if (document == null)
         {
             MessageBox.Show("No active AutoCAD document is available.", "Check", MessageBoxButton.OK, MessageBoxImage.Information);
-            return new DrillCheckSummary(completed: false, Array.Empty<DrillCheckResult>(), reportPath: null);
+            return new DrillCheckSummary(completed: false, new DrillCheckResult[0], reportPath: null);
         }
 
         var editor = document.Editor;
@@ -71,7 +71,7 @@ public class DrillCadToolService
             if (tableResult.Status != PromptStatus.OK)
             {
                 editor.WriteMessage("\nTable selection cancelled.");
-                return new DrillCheckSummary(completed: false, Array.Empty<DrillCheckResult>(), reportPath: null);
+                return new DrillCheckSummary(completed: false, new DrillCheckResult[0], reportPath: null);
             }
 
             List<string> tableValues;
@@ -80,7 +80,7 @@ public class DrillCadToolService
                 if (transaction.GetObject(tableResult.ObjectId, OpenMode.ForRead) is not Table table)
                 {
                     MessageBox.Show("Selected entity is not a valid table.", "Check", MessageBoxButton.OK, MessageBoxImage.Error);
-                    return new DrillCheckSummary(completed: false, Array.Empty<DrillCheckResult>(), reportPath: null);
+                    return new DrillCheckSummary(completed: false, new DrillCheckResult[0], reportPath: null);
                 }
 
                 tableValues = ExtractBottomHoleValues(table);
@@ -89,14 +89,14 @@ public class DrillCadToolService
 
             if (tableValues.Count == 0)
             {
-                return new DrillCheckSummary(completed: false, Array.Empty<DrillCheckResult>(), reportPath: null);
+                return new DrillCheckSummary(completed: false, new DrillCheckResult[0], reportPath: null);
             }
 
             var blockData = SelectBlocksWithDrillName(document);
             if (blockData == null || blockData.Count == 0)
             {
                 MessageBox.Show("No blocks selected or no blocks with DRILLNAME attribute found.", "Check", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return new DrillCheckSummary(completed: false, Array.Empty<DrillCheckResult>(), reportPath: null);
+                return new DrillCheckSummary(completed: false, new DrillCheckResult[0], reportPath: null);
             }
 
             return CompareDrillNamesWithTable(drillNames, tableValues, blockData);
@@ -105,7 +105,7 @@ public class DrillCadToolService
         {
             _log.Error($"Error during check operation: {ex.Message}", ex);
             MessageBox.Show($"An error occurred during the check operation: {ex.Message}", "Check", MessageBoxButton.OK, MessageBoxImage.Error);
-            return new DrillCheckSummary(completed: false, Array.Empty<DrillCheckResult>(), reportPath: null);
+            return new DrillCheckSummary(completed: false, new DrillCheckResult[0], reportPath: null);
         }
     }
 

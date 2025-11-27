@@ -13,6 +13,8 @@ public enum DrillCheckStatus
 
 public class DrillCheckResult
 {
+    public static readonly DrillCheckResult[] EmptyResults = new DrillCheckResult[0];
+
     public DrillCheckResult(
         int index,
         string drillName,
@@ -24,7 +26,7 @@ public class DrillCheckResult
         DrillName = drillName ?? string.Empty;
         TableValue = tableValue ?? string.Empty;
         BlockDrillName = blockDrillName ?? string.Empty;
-        Discrepancies = discrepancies ?? Array.Empty<string>();
+        Discrepancies = discrepancies ?? new string[0];
         Status = Discrepancies.Count == 0 ? DrillCheckStatus.Pass : DrillCheckStatus.Fail;
     }
 
@@ -37,6 +39,8 @@ public class DrillCheckResult
     public string BlockDrillName { get; }
 
     public IReadOnlyList<string> Discrepancies { get; }
+
+    public string[] Notes { get; set; } = new string[0];
 
     public DrillCheckStatus Status { get; }
 
@@ -51,7 +55,7 @@ public class DrillCheckSummary
     public DrillCheckSummary(bool completed, IReadOnlyList<DrillCheckResult> results, string? reportPath)
     {
         Completed = completed;
-        Results = results ?? Array.Empty<DrillCheckResult>();
+        Results = results ?? new DrillCheckResult[0];
         ReportPath = reportPath;
     }
 
