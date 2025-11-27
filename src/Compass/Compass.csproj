@@ -1,113 +1,141 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
-	<PropertyGroup>
-		<TargetFramework>net48</TargetFramework>
-		<UseWPF>true</UseWPF>
-		<OutputType>Library</OutputType>
-		<RootNamespace>Compass</RootNamespace>
-		<AssemblyName>Compass</AssemblyName>
-		<LangVersion>latest</LangVersion>
-		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-		<!-- Ensure NuGet DLLs are copied so Costura can embed them -->
-		<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
-	</PropertyGroup>
+<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+        <PropertyGroup>
+                <TargetFrameworks>net48;net45</TargetFrameworks>
+                <UseWPF>true</UseWPF>
+                <OutputType>Library</OutputType>
+                <RootNamespace>Compass</RootNamespace>
+                <AssemblyName>Compass</AssemblyName>
+                <LangVersion>latest</LangVersion>
+                <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+                <!-- Ensure NuGet DLLs are copied so Costura can embed them -->
+                <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+        </PropertyGroup>
 
-	<!-- ===== AutoCAD root (edit this if needed) ===== -->
-	<PropertyGroup>
-		<!-- Environment override wins if set -->
-		<AutoCADReferencePath Condition="'$(AutoCADReferencePath)' == '' and '$(AUTOCAD_ROOT)' != ''">
-			$([System.IO.Path]::GetFullPath('$(AUTOCAD_ROOT)'))
-		</AutoCADReferencePath>
-		<!-- Default fallback -->
-		<AutoCADReferencePath Condition="'$(AutoCADReferencePath)' == ''">
-			C:\Program Files\Autodesk\AutoCAD 2022
-		</AutoCADReferencePath>
-		<!-- Trim any trailing backslashes -->
-		<AutoCADReferencePath>$([System.String]::Copy('$(AutoCADReferencePath)').TrimEnd('\'))</AutoCADReferencePath>
-	</PropertyGroup>
+        <!-- ===== AutoCAD root (edit this if needed) ===== -->
+        <PropertyGroup>
+                <!-- Environment override wins if set -->
+                <AutoCADReferencePath Condition="'$(AutoCADReferencePath)' == '' and '$(AUTOCAD_ROOT)' != ''">
+                        $([System.IO.Path]::GetFullPath('$(AUTOCAD_ROOT)'))
+                </AutoCADReferencePath>
+        </PropertyGroup>
 
-	<!-- Autodesk references (never Copy Local) -->
-	<ItemGroup>
-		<!-- Map 3D managed API if installed -->
-		<Reference Include="accoremgd">
-			<HintPath>..\..\..\..\..\..\Program Files\Autodesk\AutoCAD 2022\accoremgd.dll</HintPath>
-		</Reference>
-		<Reference Include="Acdbmgd">
-			<HintPath>..\..\..\..\..\..\Program Files\Autodesk\AutoCAD 2022\acdbmgd.dll</HintPath>
-		</Reference>
-		<Reference Include="acdbmgdbrep">
-			<HintPath>..\..\..\..\..\..\Program Files\Autodesk\AutoCAD 2022\acdbmgdbrep.dll</HintPath>
-		</Reference>
-		<Reference Include="Acmgd">
-			<HintPath>..\..\..\..\..\..\Program Files\Autodesk\AutoCAD 2022\acmgd.dll</HintPath>
-		</Reference>
-		<Reference Include="AdWindows">
-			<HintPath>..\..\..\..\..\..\Program Files\Autodesk\AutoCAD 2022\AdWindows.dll</HintPath>
-		</Reference>
-		<Reference Include="ManagedMapApi" Condition="Exists('$(AutoCADReferencePath)\Map\ManagedMapApi.dll')">
-			<HintPath>$(AutoCADReferencePath)\Map\ManagedMapApi.dll</HintPath>
-			<Private>false</Private>
-			<SpecificVersion>false</SpecificVersion>
-		</Reference>
-		<!-- Fallback if ManagedMapApi isn't found in AutoCADReferencePath -->
-		<Reference Include="ManagedMapApi">
-			<HintPath>..\..\..\..\..\..\Program Files\Autodesk\AutoCAD 2022\Map\ManagedMapApi.dll</HintPath>
-		</Reference>
-	</ItemGroup>
+        <PropertyGroup Condition="'$(AutoCADReferencePath)' == '' and '$(TargetFramework)' == 'net48'">
+                <AutoCADReferencePath>C:\Program Files\Autodesk\AutoCAD 2022</AutoCADReferencePath>
+        </PropertyGroup>
 
-	<!-- NuGet packages -->
-	<ItemGroup>
-		<!-- Configuration and logging packages -->
-		<PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
-		<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.0" />
-		<PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="8.0.0" />
-		<PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="8.0.0" />
-		<PackageReference Include="Microsoft.Extensions.FileProviders.Physical" Version="8.0.0" />
-		<PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="8.0.0" />
-		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
+        <PropertyGroup Condition="'$(AutoCADReferencePath)' == '' and '$(TargetFramework)' == 'net45'">
+                <AutoCADReferencePath>C:\Program Files\Autodesk\AutoCAD 2015</AutoCADReferencePath>
+        </PropertyGroup>
 
-		<!-- Logging -->
-		<PackageReference Include="NLog" Version="5.5.0" />
+        <PropertyGroup Condition="'$(AutoCADReferencePath)' != ''">
+                <!-- Trim any trailing backslashes -->
+                <AutoCADReferencePath>$([System.String]::Copy('$(AutoCADReferencePath)').TrimEnd('\\'))</AutoCADReferencePath>
+        </PropertyGroup>
 
-		<!-- Excel library -->
-		<PackageReference Include="EPPlus" Version="8.0.5" />
-		<PackageReference Include="EPPlus.Interfaces" Version="8.0.0" />
-		<PackageReference Include="EPPlus.System.Drawing" Version="8.0.0" />
+        <!-- Autodesk references (never Copy Local) -->
+        <ItemGroup>
+                <!-- Map 3D managed API if installed -->
+                <Reference Include="accoremgd">
+                        <HintPath>$(AutoCADReferencePath)\\accoremgd.dll</HintPath>
+                        <Private>false</Private>
+                        <SpecificVersion>false</SpecificVersion>
+                </Reference>
+                <Reference Include="Acdbmgd">
+                        <HintPath>$(AutoCADReferencePath)\\acdbmgd.dll</HintPath>
+                        <Private>false</Private>
+                        <SpecificVersion>false</SpecificVersion>
+                </Reference>
+                <Reference Include="acdbmgdbrep">
+                        <HintPath>$(AutoCADReferencePath)\\acdbmgdbrep.dll</HintPath>
+                        <Private>false</Private>
+                        <SpecificVersion>false</SpecificVersion>
+                </Reference>
+                <Reference Include="Acmgd">
+                        <HintPath>$(AutoCADReferencePath)\\acmgd.dll</HintPath>
+                        <Private>false</Private>
+                        <SpecificVersion>false</SpecificVersion>
+                </Reference>
+                <Reference Include="AdWindows">
+                        <HintPath>$(AutoCADReferencePath)\\AdWindows.dll</HintPath>
+                        <Private>false</Private>
+                        <SpecificVersion>false</SpecificVersion>
+                </Reference>
+                <Reference Include="ManagedMapApi" Condition="Exists('$(AutoCADReferencePath)\\Map\\ManagedMapApi.dll')">
+                        <HintPath>$(AutoCADReferencePath)\\Map\\ManagedMapApi.dll</HintPath>
+                        <Private>false</Private>
+                        <SpecificVersion>false</SpecificVersion>
+                </Reference>
+        </ItemGroup>
 
-		<!-- Core System packages: versions aligned to include net462 builds -->
-		<PackageReference Include="System.Buffers" Version="4.6.1" />
-		<PackageReference Include="System.Numerics.Vectors" Version="4.6.1" />
-		<PackageReference Include="System.ValueTuple" Version="4.6.1" />
-		<PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.1.2" />
-		<PackageReference Include="System.Threading.Tasks.Extensions" Version="4.6.3" />
+        <ItemGroup Condition="'$(TargetFramework)' == 'net48'">
+                <!-- Configuration and logging packages -->
+                <PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
+                <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.0" />
+                <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="8.0.0" />
+                <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="8.0.0" />
+                <PackageReference Include="Microsoft.Extensions.FileProviders.Physical" Version="8.0.0" />
+                <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="8.0.0" />
+                <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
 
-		<!-- JSON library. 8.0.0 is vulnerable to CVE-2024-43485; use patched 8.0.5 -->
-		<PackageReference Include="System.Text.Json" Version="8.0.5" />
+                <!-- Excel library -->
+                <PackageReference Include="EPPlus" Version="8.0.5" />
+                <PackageReference Include="EPPlus.Interfaces" Version="8.0.0" />
+                <PackageReference Include="EPPlus.System.Drawing" Version="8.0.0" />
 
-		<!-- Fody weaving and Costura for embedding dependencies. Specify explicit versions to satisfy NU1604 -->
-		<PackageReference Include="Fody" Version="6.9.3" PrivateAssets="all" />
-		<PackageReference Include="Costura.Fody" Version="6.0.0" PrivateAssets="all" />
-	</ItemGroup>
+                <!-- Core System packages: versions aligned to include net462 builds -->
+                <PackageReference Include="System.Buffers" Version="4.6.1" />
+                <PackageReference Include="System.Numerics.Vectors" Version="4.6.1" />
+                <PackageReference Include="System.ValueTuple" Version="4.6.1" />
+                <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.1.2" />
+                <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.6.3" />
+        </ItemGroup>
 
-	<!-- XAML code-behind nesting -->
-	<ItemGroup>
-		<Compile Update="UI\CompassControl.xaml.cs">
-			<DependentUpon>CompassControl.xaml</DependentUpon>
-		</Compile>
-		<Compile Update="UI\DrillManagerControl.xaml.cs">
-			<DependentUpon>DrillManagerControl.xaml</DependentUpon>
-		</Compile>
-		<Compile Update="UI\ProfileManagerControl.xaml.cs">
-			<DependentUpon>ProfileManagerControl.xaml</DependentUpon>
-		</Compile>
-	</ItemGroup>
+        <ItemGroup Condition="'$(TargetFramework)' == 'net45'">
+                <!-- Configuration and logging packages compatible with .NET Framework 4.5 -->
+                <PackageReference Include="Microsoft.Extensions.Configuration" Version="1.1.2" />
+                <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="1.1.2" />
+                <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="1.1.2" />
+                <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="1.1.2" />
+                <PackageReference Include="Microsoft.Extensions.FileProviders.Physical" Version="1.1.1" />
+                <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="1.1.2" />
+                <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="1.1.2" />
 
-	<!-- Content files -->
-	<ItemGroup>
-		<None Update="appsettings.json">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</None>
-		<None Update="NLog.config">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</None>
-	</ItemGroup>
+                <!-- Excel library compatible with .NET Framework 4.5 -->
+                <PackageReference Include="EPPlus" Version="4.5.3.3" />
+        </ItemGroup>
+
+        <ItemGroup>
+                <!-- Logging -->
+                <PackageReference Include="NLog" Version="5.5.0" />
+
+                <!-- JSON library -->
+                <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+
+                <!-- Fody weaving and Costura for embedding dependencies. Specify explicit versions to satisfy NU1604 -->
+                <PackageReference Include="Fody" Version="6.9.3" PrivateAssets="all" />
+                <PackageReference Include="Costura.Fody" Version="6.0.0" PrivateAssets="all" />
+        </ItemGroup>
+
+        <!-- XAML code-behind nesting -->
+        <ItemGroup>
+                <Compile Update="UI\\CompassControl.xaml.cs">
+                        <DependentUpon>CompassControl.xaml</DependentUpon>
+                </Compile>
+                <Compile Update="UI\\DrillManagerControl.xaml.cs">
+                        <DependentUpon>DrillManagerControl.xaml</DependentUpon>
+                </Compile>
+                <Compile Update="UI\\ProfileManagerControl.xaml.cs">
+                        <DependentUpon>ProfileManagerControl.xaml</DependentUpon>
+                </Compile>
+        </ItemGroup>
+
+        <!-- Content files -->
+        <ItemGroup>
+                <None Update="appsettings.json">
+                        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+                </None>
+                <None Update="NLog.config">
+                        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+                </None>
+        </ItemGroup>
 </Project>

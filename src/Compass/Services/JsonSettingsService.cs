@@ -3,21 +3,13 @@ using System.Collections.Generic;
 using System.IO;
 using Autodesk.AutoCAD.ApplicationServices;
 using Compass.Models;
-using System.Text.Json;
-using System.Text.Json.Serialization;
+using Newtonsoft.Json;
 
 namespace Compass.Services;
 
 public class JsonSettingsService
 {
     private readonly AppSettings _appSettings;
-    private static readonly JsonSerializerOptions SerializerOptions = new()
-    {
-        WriteIndented = true,
-        PropertyNameCaseInsensitive = true,
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-    };
-
     public JsonSettingsService(AppSettings appSettings)
     {
         _appSettings = appSettings ?? throw new ArgumentNullException(nameof(appSettings));
@@ -50,7 +42,7 @@ public class JsonSettingsService
         }
 
         var json = File.ReadAllText(path);
-        var state = JsonSerializer.Deserialize<DrillGridState>(json, SerializerOptions) ?? new DrillGridState();
+        var state = JsonConvert.DeserializeObject<DrillGridState>(json) ?? new DrillGridState();
         EnsureCount(state.DrillNames, drillCount);
         return state;
     }
@@ -111,6 +103,6 @@ public class JsonSettingsService
 
     private static string SerializeIndented(object value)
     {
-        return JsonSerializer.Serialize(value, SerializerOptions);
+        return JsonConvert.SerializeObject(value, Formatting.Indented);
     }
 }
