@@ -35,6 +35,8 @@ public class CompassToolsApplication : IExtensionApplication
 
     public void Initialize()
     {
+        // Preload the Compass Tools palette during initialization so the tab is available immediately
+        EnsurePalette();
     }
 
     public void Terminate()
