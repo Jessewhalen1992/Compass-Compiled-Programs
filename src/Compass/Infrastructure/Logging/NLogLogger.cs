@@ -1,6 +1,8 @@
 using System;
 using Compass.Infrastructure.Logging;
+#if NET48
 using Microsoft.Extensions.Configuration;
+#endif
 using NLog;
 
 namespace Compass.Infrastructure.Logging;
@@ -13,6 +15,7 @@ public sealed class NLogLogger : ILog
     {
     }
 
+#if NET48
     public NLogLogger(IConfiguration configuration)
     {
         if (configuration == null)
@@ -20,6 +23,7 @@ public sealed class NLogLogger : ILog
             throw new ArgumentNullException(nameof(configuration));
         }
     }
+#endif
 
     public void Info(string message) => _logger.Info(message);
 
