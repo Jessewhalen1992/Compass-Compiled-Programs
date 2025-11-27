@@ -22,7 +22,8 @@ public class CogoApplication : IExtensionApplication
         new LispToolDefinition("set-cogo-units", "Set COGO Units", "Set Units for Below COGO Buttons", "COMPASS\\COGO\\cogo.fas", "COGOUNITS"),
         new LispToolDefinition("azimuth", "Azimuth", "Create an Azimuth Polyline", "COMPASS\\COGO\\cogo.fas", "AZ"),
         new LispToolDefinition("bearing-traverse", "Bearing Traverse", "Create an Bearing Traverse Polyline", "COMPASS\\COGO\\cogo.fas", "BRG"),
-        new LispToolDefinition("angle-traverse", "Angle Traverse", "Create an Angle Traverse Polyline", "COMPASS\\COGO\\cogo.fas", "AT")
+        new LispToolDefinition("angle-traverse", "Angle Traverse", "Create an Angle Traverse Polyline", "COMPASS\\COGO\\cogo.fas", "AT"),
+        new LispToolDefinition("meters-to-feet", "Meters to Feet", "Convert Text from meters to feet", "COMPASS\\COGO\\metersToFeet.fas", "M2ft")
     };
 
     private static CompassControl? _control;
