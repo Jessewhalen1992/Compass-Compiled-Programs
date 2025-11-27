@@ -1,3 +1,4 @@
+using Compass;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,6 +23,11 @@ public class CompassApplication : IExtensionApplication
         CompassEnvironment.Initialize();
         EnsureModules();
         EnsureCompassPaletteTab();
+
+        // Explicitly initialize other modules so they add their tabs
+        new FormatTablesApplication().Initialize();
+        new CompassToolsApplication().Initialize();
+        new CompassLegalApplication().Initialize();
     }
 
     public void Terminate()
