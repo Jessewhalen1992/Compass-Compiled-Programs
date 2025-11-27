@@ -21,6 +21,7 @@ public class CompassApplication : IExtensionApplication
     {
         CompassEnvironment.Initialize();
         EnsureModules();
+        EnsureCompassPaletteTab();
     }
 
     public void Terminate()

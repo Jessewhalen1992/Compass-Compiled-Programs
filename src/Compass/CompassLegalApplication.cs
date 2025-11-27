@@ -35,6 +35,22 @@ public class CompassLegalApplication : IExtensionApplication
 
     public void Initialize()
     {
+        // Only create and register the Legal tab once
+        if (_control == null)
+        {
+            _control = new CompassControl
+            {
+                TitleText = "Compass Legal",
+                SubtitleText = "Select a legal tool to launch."
+            };
+            _control.ModuleRequested += OnToolRequested;
+            _control.LoadModules(LegalTools.Select((tool, index) =>
+                new CompassModuleDefinition(tool.Id, tool.DisplayName, tool.Description, index)));
+
+            // Preload the Legal tab in the unified palette
+            UnifiedPaletteHost.EnsurePalette();
+            UnifiedPaletteHost.AddTab("Legal", _control);
+        }
     }
 
     public void Terminate()
