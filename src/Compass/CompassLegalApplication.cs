@@ -18,17 +18,18 @@ public class CompassLegalApplication : IExtensionApplication
             "plan-to-legal",
             "Plan to Legal",
             "Convert Plan to Legal Plan",
-            @"^C^C(IF (NOT C:leglayers) (LOAD \"leglayers\"));legf"),
+            // note the doubled quotes inside the verbatim string
+            @"^C^C(IF (NOT C:leglayers) (LOAD ""leglayers""));legf"),
         new(
             "legal-layer-convert",
             "Legal Layer Convert",
             "Convert Layers to Legal Layers",
-            @"^C^C(IF (NOT C:PLTO) (LOAD \"PLTO\"));PLTO"),
+            @"^C^C(IF (NOT C:PLTO) (LOAD ""PLTO""));PLTO"),
         new(
             "lto-check",
             "LTO Check",
             "Check LTO Layers (Use in Paper Space)",
-            @"^C^C(IF (NOT C:LTO_Check) (LOAD \"LTO_Check\"));check")
+            @"^C^C(IF (NOT C:LTO_Check) (LOAD ""LTO_Check""));check")
     };
 
     private static PaletteSet? _palette;
