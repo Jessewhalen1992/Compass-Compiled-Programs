@@ -3,7 +3,6 @@ using System.IO;
 using System.Linq;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.Runtime;
-using Autodesk.AutoCAD.Windows;
 using Compass.UI;
 using Compass.ViewModels;
 
@@ -32,7 +31,6 @@ public class CompassToolsApplication : IExtensionApplication
         new("round-bearing-distances", "Round Bearing/Distances", "Round Survey B/Ds to Sketch B/Ds", "COMPASS\\MISC TOOLS\\rdtxt.fas", "rdtxt")
     };
 
-    private static PaletteSet? _palette;
     private static CompassControl? _control;
 
     public void Initialize()
@@ -41,11 +39,10 @@ public class CompassToolsApplication : IExtensionApplication
 
     public void Terminate()
     {
-        if (_palette != null)
+        if (_control != null)
         {
-            _palette.Visible = false;
-            _palette.Dispose();
-            _palette = null;
+            _control.ModuleRequested -= OnToolRequested;
+            _control = null;
         }
     }
 
@@ -53,16 +50,12 @@ public class CompassToolsApplication : IExtensionApplication
     public static void ShowCompassTools()
     {
         EnsurePalette();
-        if (_palette != null)
-        {
-            _palette.Visible = true;
-            _palette.Activate(0);
-        }
+        UnifiedPaletteHost.ShowPalette("Tools");
     }
 
     private static void EnsurePalette()
     {
-        if (_palette != null)
+        if (_control != null)
         {
             return;
         }
@@ -76,15 +69,8 @@ public class CompassToolsApplication : IExtensionApplication
         _control.ModuleRequested += OnToolRequested;
         _control.LoadModules(Tools.Select((tool, index) => new CompassModuleDefinition(tool.Id, tool.DisplayName, tool.Description, index)));
 
-        _palette = new PaletteSet("Compass Tools", new Guid("f33e2ff0-2b0c-4d54-9c8c-80b9c8df4b36"))
-        {
-            Style = PaletteSetStyles.ShowCloseButton | PaletteSetStyles.ShowPropertiesMenu | PaletteSetStyles.Snappable,
-            DockEnabled = DockSides.Left | DockSides.Right | DockSides.Top | DockSides.Bottom,
-            Visible = false
-        };
-
-        _palette.MinimumSize = new System.Drawing.Size(320, 240);
-        _palette.AddVisual("Tools", _control);
+        UnifiedPaletteHost.EnsurePalette();
+        UnifiedPaletteHost.AddTab("Tools", _control);
     }
 
     private static void OnToolRequested(object? sender, string toolId)
