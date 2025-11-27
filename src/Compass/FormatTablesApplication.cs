@@ -2,7 +2,6 @@ using System;
 using System.Linq;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.Runtime;
-using Autodesk.AutoCAD.Windows;
 using Compass.UI;
 using Compass.ViewModels;
 
@@ -36,7 +35,6 @@ public class FormatTablesApplication : IExtensionApplication
             @"^C^CWSFT")
     };
 
-    private static PaletteSet? _palette;
     private static CompassControl? _control;
 
     public void Initialize()
@@ -45,11 +43,10 @@ public class FormatTablesApplication : IExtensionApplication
 
     public void Terminate()
     {
-        if (_palette != null)
+        if (_control != null)
         {
-            _palette.Visible = false;
-            _palette.Dispose();
-            _palette = null;
+            _control.ModuleRequested -= OnToolRequested;
+            _control = null;
         }
     }
 
@@ -57,16 +54,12 @@ public class FormatTablesApplication : IExtensionApplication
     public static void ShowFormatTables()
     {
         EnsurePalette();
-        if (_palette != null)
-        {
-            _palette.Visible = true;
-            _palette.Activate(0);
-        }
+        UnifiedPaletteHost.ShowPalette("Format Tables");
     }
 
     private static void EnsurePalette()
     {
-        if (_palette != null)
+        if (_control != null)
         {
             return;
         }
@@ -81,15 +74,8 @@ public class FormatTablesApplication : IExtensionApplication
         _control.LoadModules(FormatTableTools.Select((tool, index) =>
             new CompassModuleDefinition(tool.Id, tool.DisplayName, tool.Description, index)));
 
-        _palette = new PaletteSet("Format Tables", new Guid("e2af6cf7-3c8c-4de1-bb36-4434726fa2f7"))
-        {
-            Style = PaletteSetStyles.ShowCloseButton | PaletteSetStyles.ShowPropertiesMenu | PaletteSetStyles.Snappable,
-            DockEnabled = DockSides.Left | DockSides.Right | DockSides.Top | DockSides.Bottom,
-            Visible = false
-        };
-
-        _palette.MinimumSize = new System.Drawing.Size(320, 240);
-        _palette.AddVisual("Format Tables", _control);
+        UnifiedPaletteHost.EnsurePalette();
+        UnifiedPaletteHost.AddTab("Format Tables", _control);
     }
 
     private static void OnToolRequested(object? sender, string toolId)

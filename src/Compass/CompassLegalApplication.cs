@@ -2,7 +2,6 @@ using System;
 using System.Linq;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.Runtime;
-using Autodesk.AutoCAD.Windows;
 using Compass.UI;
 using Compass.ViewModels;
 
@@ -32,7 +31,6 @@ public class CompassLegalApplication : IExtensionApplication
             @"^C^C(IF (NOT C:LTO_Check) (LOAD ""LTO_Check""));check")
     };
 
-    private static PaletteSet? _palette;
     private static CompassControl? _control;
 
     public void Initialize()
@@ -41,11 +39,10 @@ public class CompassLegalApplication : IExtensionApplication
 
     public void Terminate()
     {
-        if (_palette != null)
+        if (_control != null)
         {
-            _palette.Visible = false;
-            _palette.Dispose();
-            _palette = null;
+            _control.ModuleRequested -= OnToolRequested;
+            _control = null;
         }
     }
 
@@ -53,16 +50,12 @@ public class CompassLegalApplication : IExtensionApplication
     public static void ShowCompassLegal()
     {
         EnsurePalette();
-        if (_palette != null)
-        {
-            _palette.Visible = true;
-            _palette.Activate(0);
-        }
+        UnifiedPaletteHost.ShowPalette("Legal");
     }
 
     private static void EnsurePalette()
     {
-        if (_palette != null)
+        if (_control != null)
         {
             return;
         }
@@ -77,15 +70,8 @@ public class CompassLegalApplication : IExtensionApplication
         _control.LoadModules(LegalTools.Select((tool, index) =>
             new CompassModuleDefinition(tool.Id, tool.DisplayName, tool.Description, index)));
 
-        _palette = new PaletteSet("Compass Legal", new Guid("5b8e35b2-66cd-4878-b328-6e275c35ff6d"))
-        {
-            Style = PaletteSetStyles.ShowCloseButton | PaletteSetStyles.ShowPropertiesMenu | PaletteSetStyles.Snappable,
-            DockEnabled = DockSides.Left | DockSides.Right | DockSides.Top | DockSides.Bottom,
-            Visible = false
-        };
-
-        _palette.MinimumSize = new System.Drawing.Size(320, 240);
-        _palette.AddVisual("Legal", _control);
+        UnifiedPaletteHost.EnsurePalette();
+        UnifiedPaletteHost.AddTab("Legal", _control);
     }
 
     private static void OnToolRequested(object? sender, string toolId)

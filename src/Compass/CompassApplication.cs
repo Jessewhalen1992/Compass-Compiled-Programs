@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Autodesk.AutoCAD.Runtime;
-using Autodesk.AutoCAD.Windows;
 using Compass.Infrastructure;
 using Compass.Modules;
 using Compass.UI;
@@ -16,7 +15,6 @@ public class CompassApplication : IExtensionApplication
 {
     private static readonly Dictionary<string, ICompassModule> Modules = new(StringComparer.OrdinalIgnoreCase);
     private static readonly List<ICompassModule> ModuleList = new();
-    private static PaletteSet? _compassPalette;
     private static CompassControl? _compassControl;
 
     public void Initialize()
@@ -36,11 +34,10 @@ public class CompassApplication : IExtensionApplication
             // ignore shutdown failures
         }
 
-        if (_compassPalette != null)
+        if (_compassControl != null)
         {
-            _compassPalette.Visible = false;
-            _compassPalette.Dispose();
-            _compassPalette = null;
+            _compassControl.ModuleRequested -= OnModuleRequested;
+            _compassControl = null;
         }
     }
 
@@ -48,12 +45,8 @@ public class CompassApplication : IExtensionApplication
     public static void ShowCompass()
     {
         EnsureModules();
-        EnsureCompassPalette();
-        if (_compassPalette != null)
-        {
-            _compassPalette.Visible = true;
-            _compassPalette.Activate(0);
-        }
+        EnsureCompassPaletteTab();
+        UnifiedPaletteHost.ShowPalette("Compass");
     }
 
     private static void EnsureModules()
@@ -94,9 +87,9 @@ public class CompassApplication : IExtensionApplication
         }
     }
 
-    private static void EnsureCompassPalette()
+    private static void EnsureCompassPaletteTab()
     {
-        if (_compassPalette != null)
+        if (_compassControl != null)
         {
             return;
         }
@@ -110,15 +103,8 @@ public class CompassApplication : IExtensionApplication
 
         _compassControl.LoadModules(definitions);
 
-        _compassPalette = new PaletteSet("Compass", new Guid("c833fa27-9db1-4d67-85d4-45115ac0a2c2"))
-        {
-            Style = PaletteSetStyles.ShowCloseButton | PaletteSetStyles.ShowPropertiesMenu | PaletteSetStyles.Snappable,
-            DockEnabled = DockSides.Left | DockSides.Right | DockSides.Top | DockSides.Bottom,
-            Visible = false
-        };
-
-        _compassPalette.MinimumSize = new System.Drawing.Size(320, 240);
-        _compassPalette.AddVisual("Programs", _compassControl);
+        UnifiedPaletteHost.EnsurePalette();
+        UnifiedPaletteHost.AddTab("Compass", _compassControl);
     }
 
     private static void OnModuleRequested(object? sender, string moduleId)
