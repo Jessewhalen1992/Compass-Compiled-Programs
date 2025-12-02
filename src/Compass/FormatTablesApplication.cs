@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.Runtime;
@@ -17,22 +17,22 @@ public class FormatTablesApplication : IExtensionApplication
             "format-surface-impact-box",
             "Format Surface Impact Box",
             "Fix Surface Impact Cell and Text Sizes",
-            @"^C^Csift"),
+            @"sift"),
         new(
             "format-hybrid-table",
             "Format Hybrid Table",
             "Fix Hybrid Cell and Text Sizes",
-            @"^C^CHFT"),
+            @"HFT"),
         new(
             "format-well-coordinate-table",
             "Format Well Coordinate Table",
             "Fix Well Coordinate Cell and Text Sizes",
-            @"^C^CWFT"),
+            @"WFT"),
         new(
             "format-workspace-table",
             "Format Workspace Table",
             "Fix Workspace Cell and Text Sizes",
-            @"^C^CWSFT")
+            @"WSFT")
     };
 
     private static CompassControl? _control;
@@ -100,7 +100,11 @@ public class FormatTablesApplication : IExtensionApplication
             return;
         }
 
-        document.SendStringToExecute($"{tool.Macro}\\n", true, false, false);
+        // Cancel any in‑progress command
+        document.SendStringToExecute("\u001B\u001B", true, false, false);
+
+        // Send the macro (e.g., ^C^Csift) and terminate with an actual newline
+        document.SendStringToExecute($"{tool.Macro}\n", true, false, false);
     }
 
     private record MacroToolDefinition(string Id, string DisplayName, string Description, string Macro);

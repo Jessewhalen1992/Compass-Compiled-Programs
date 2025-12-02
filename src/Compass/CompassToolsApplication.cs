@@ -24,7 +24,7 @@ public class CompassToolsApplication : IExtensionApplication
         new("iop-maker", "IOP Maker", "Automatically Make IOP Page", "COMPASS\\MISC TOOLS\\iop maker.fas", "createiop"),
         new("dim-perp", "Dim Perp", "Measure From Point to a Perpendicular Line", "COMPASS\\MISC TOOLS\\DimPerp.fas", "dimperp"),
         new("renumber-workspace", "Renumber Workspace", "Renumber workspace based on a Polyline", "COMPASS\\MISC TOOLS\\RENUMBERWORKSPACE V1.fas", "RNW"),
-        new("tie-text", "Tie Text", "Add \"(Tie)\" to end of a text", "COMPASS\\MISC TOOLS\\iop maker.fas", "tie"),
+        new("tie-text", "Tie Text", "Add \"(Tie)\" to end of a text", "COMPASS\\MISC TOOLS\\Tie.fas", "tie"),
         new("sum-values", "Sum Values", "Add up Values of Text/Mtext", "COMPASS\\MISC TOOLS\\sumvalue.fas", "sv"),
         new("delete-data-links", "Delete Data Links", "Remove all Data Links From Current Drawing", "COMPASS\\MISC TOOLS\\deletedatalinks.fas", "DDL"),
         new("convert-text-styles", "Convert Text Styles", "Convert Old Text Style to New", "COMPASS\\MISC TOOLS\\convertxt.fas", "CTS"),
