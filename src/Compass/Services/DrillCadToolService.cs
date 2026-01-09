@@ -733,50 +733,45 @@ public class DrillCadToolService
                 }
 
                 var columnsToCheck = new[] { 2, 3 };
-                var dataCells = new List<(int Row, int Column, double Value, string Direction, string OriginalText)>();
-                var offsetRegex = new Regex(@"^\s*([+-]?\d+(\.\d+)?)\s*([NnSsEeWw])\s*$");
+                if (table.Columns.Count <= columnsToCheck.Max())
+                {
+                    MessageBox.Show("The selected table does not contain columns C and D.", "Update Offsets", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    _log.Info("Update Offsets: Table missing columns C/D.");
+                    return;
+                }
 
+                var labelRows = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
                 for (var row = 0; row < table.Rows.Count; row++)
                 {
-                    foreach (var column in columnsToCheck)
+                    for (var column = 0; column < table.Columns.Count; column++)
                     {
-                        if (column >= table.Columns.Count)
-                        {
-                            continue;
-                        }
-
                         var text = table.Cells[row, column].TextString?.Trim() ?? string.Empty;
-                        if (string.IsNullOrWhiteSpace(text))
+                        if (!DrillParsers.IsGridLabel(text))
                         {
                             continue;
                         }
 
-                        var match = offsetRegex.Match(text);
-                        if (!match.Success)
+                        if (!labelRows.ContainsKey(text))
                         {
-                            continue;
+                            labelRows[text] = row;
                         }
 
-                        var numeric = match.Groups[1].Value;
-                        var direction = match.Groups[3].Value.ToUpperInvariant();
-                        if (double.TryParse(numeric, NumberStyles.Any, CultureInfo.InvariantCulture, out var value))
-                        {
-                            dataCells.Add((row, column, value, direction, text));
-                        }
+                        break;
                     }
                 }
 
-                if (dataCells.Count == 0)
+                if (labelRows.Count == 0)
                 {
-                    MessageBox.Show("No numeric offset values found in columns C or D of the selected table.", "Update Offsets", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    _log.Info("Update Offsets: No data found in columns C/D.");
+                    MessageBox.Show("No drill point labels found in the selected table.", "Update Offsets", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    _log.Info("Update Offsets: No drill point labels found in table.");
                     return;
                 }
 
                 var blockTable = (BlockTable)transaction.GetObject(database.BlockTableId, OpenMode.ForRead);
                 var modelSpace = (BlockTableRecord)transaction.GetObject(blockTable[BlockTableRecord.ModelSpace], OpenMode.ForRead);
 
-                var offsetTextIds = new List<ObjectId>();
+                var drillPoints = new Dictionary<string, Point3d>(StringComparer.OrdinalIgnoreCase);
+                var offsetLines = new List<Line>();
                 foreach (ObjectId entityId in modelSpace)
                 {
                     if (transaction.GetObject(entityId, OpenMode.ForRead) is not Entity entity)
@@ -784,128 +779,133 @@ public class DrillCadToolService
                         continue;
                     }
 
-                    if (!entity.Layer.Equals(OffsetsLayer, StringComparison.OrdinalIgnoreCase))
+                    if (entity.Layer.Equals(DrillPointsLayer, StringComparison.OrdinalIgnoreCase))
+                    {
+                        switch (entity)
+                        {
+                            case DBText text when DrillParsers.IsGridLabel(text.TextString):
+                                drillPoints[text.TextString.Trim()] = text.Position;
+                                break;
+                            case MText mText when DrillParsers.IsGridLabel(mText.Contents):
+                                drillPoints[mText.Contents.Trim()] = mText.Location;
+                                break;
+                        }
+                    }
+
+                    if (entity.Layer.Equals(OffsetsLayer, StringComparison.OrdinalIgnoreCase) && entity is Line line)
+                    {
+                        offsetLines.Add(line);
+                    }
+                }
+
+                if (drillPoints.Count == 0)
+                {
+                    MessageBox.Show($"No drill point labels found on layer \"{DrillPointsLayer}\".", "Update Offsets", MessageBoxButton.OK, MessageBoxImage.Information);
+                    _log.Info("Update Offsets: No drill points found on Z-DRILL-POINT layer.");
+                    return;
+                }
+
+                if (offsetLines.Count == 0)
+                {
+                    MessageBox.Show($"No offset lines found on layer \"{OffsetsLayer}\".", "Update Offsets", MessageBoxButton.OK, MessageBoxImage.Information);
+                    _log.Info("Update Offsets: No offset lines on P-Drill-Offset layer.");
+                    return;
+                }
+
+                var offsetsByLabel = new Dictionary<string, OffsetMatch>(StringComparer.OrdinalIgnoreCase);
+                foreach (var label in drillPoints.Keys)
+                {
+                    offsetsByLabel[label] = new OffsetMatch();
+                }
+
+                const double pointTolerance = 1.0;
+                var updatedCount = 0;
+                var noMatchCount = 0;
+
+                foreach (var line in offsetLines)
+                {
+                    string? closestLabel = null;
+                    Point3d closestPoint = Point3d.Origin;
+                    Point3d closestEndpoint = Point3d.Origin;
+                    var closestDistance = double.MaxValue;
+
+                    foreach (var entry in drillPoints)
+                    {
+                        var startDistance = line.StartPoint.DistanceTo(entry.Value);
+                        var endDistance = line.EndPoint.DistanceTo(entry.Value);
+                        var minDistance = Math.Min(startDistance, endDistance);
+
+                        if (minDistance <= pointTolerance && minDistance < closestDistance)
+                        {
+                            closestLabel = entry.Key;
+                            closestPoint = entry.Value;
+                            closestEndpoint = startDistance <= endDistance ? line.StartPoint : line.EndPoint;
+                            closestDistance = minDistance;
+                        }
+                    }
+
+                    if (closestLabel == null)
                     {
                         continue;
                     }
 
-                    if (entity is DBText or MText)
+                    var otherEndpoint = closestEndpoint.DistanceTo(line.StartPoint) <= pointTolerance ? line.EndPoint : line.StartPoint;
+                    var vector = otherEndpoint - closestEndpoint;
+                    var isNorthSouth = Math.Abs(vector.Y) >= Math.Abs(vector.X);
+                    var direction = isNorthSouth
+                        ? (vector.Y >= 0 ? 'N' : 'S')
+                        : (vector.X >= 0 ? 'E' : 'W');
+
+                    var offsetMatch = offsetsByLabel[closestLabel];
+                    if (isNorthSouth)
                     {
-                        offsetTextIds.Add(entityId);
-                    }
-                }
-
-                if (offsetTextIds.Count == 0)
-                {
-                    MessageBox.Show($"No offset text found on layer \"{OffsetsLayer}\".", "Update Offsets", MessageBoxButton.OK, MessageBoxImage.Information);
-                    _log.Info("Update Offsets: No text objects on P-Drill-Offset layer.");
-                    return;
-                }
-
-                if (offsetTextIds.Count > dataCells.Count)
-                {
-                    editor.SetImpliedSelection(offsetTextIds.ToArray());
-                    var warning = $"Found {offsetTextIds.Count} offset text objects for only {dataCells.Count} table entries. Please review and try again.";
-                    editor.WriteMessage($"\n{warning}\n");
-                    MessageBox.Show(warning, "Update Offsets", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    _log.Warn($"Update Offsets aborted: {offsetTextIds.Count} offset texts for {dataCells.Count} table cells.");
-                    return;
-                }
-
-                var offsetValues = new List<(double Value, ObjectId Id)>();
-                foreach (var entityId in offsetTextIds)
-                {
-                    var entity = transaction.GetObject(entityId, OpenMode.ForRead);
-                    switch (entity)
-                    {
-                        case DBText dbText:
-                            var text = dbText.TextString.Trim();
-                            _log.Info($"DBText => '{text}'");
-                            if (double.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out var dbValue))
-                            {
-                                offsetValues.Add((dbValue, entityId));
-                            }
-                            break;
-                        case MText mText:
-                            var raw = mText.Contents;
-                            _log.Info($"Raw MText.Contents => '{raw}'");
-                            var plain = Regex.Replace(raw, @"\{\\[^\}]+;([^\}]+)\}", "$1");
-                            plain = Regex.Replace(plain, @"\\[a-zA-Z]+\s*", " ");
-                            plain = plain.Trim();
-                            _log.Info($"Cleaned MText => '{plain}'");
-
-                            var lines = plain.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-                            var foundNumeric = false;
-                            foreach (var line in lines)
-                            {
-                                var candidate = line.Trim();
-                                if (double.TryParse(candidate, NumberStyles.Any, CultureInfo.InvariantCulture, out var parsed))
-                                {
-                                    offsetValues.Add((parsed, entityId));
-                                    foundNumeric = true;
-                                    break;
-                                }
-
-                                var matchNumber = Regex.Match(candidate, @"([+-]?\d+(\.\d+)?)");
-                                if (matchNumber.Success && double.TryParse(matchNumber.Groups[1].Value, NumberStyles.Any, CultureInfo.InvariantCulture, out var extracted))
-                                {
-                                    offsetValues.Add((extracted, entityId));
-                                    foundNumeric = true;
-                                    break;
-                                }
-                            }
-
-                            if (!foundNumeric)
-                            {
-                                _log.Info("No numeric value found in MText => skipping.");
-                            }
-
-                            break;
-                    }
-                }
-
-                if (offsetValues.Count == 0)
-                {
-                    MessageBox.Show($"Text found on \"{OffsetsLayer}\" layer, but none contained valid numeric values.", "Update Offsets", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    _log.Info("Update Offsets: No numeric values found in offset text objects.");
-                    return;
-                }
-
-                const double tolerance = 10.0;
-                var updatedCount = 0;
-                var noMatchCount = 0;
-
-                table.UpgradeOpen();
-
-                foreach (var cell in dataCells)
-                {
-                    var bestDiff = double.MaxValue;
-                    var bestIndex = -1;
-
-                    for (var index = 0; index < offsetValues.Count; index++)
-                    {
-                        var diff = Math.Abs(offsetValues[index].Value - cell.Value);
-                        if (diff < bestDiff)
+                        if (!offsetMatch.NorthSouthDistance.HasValue || line.Length < offsetMatch.NorthSouthDistance.Value)
                         {
-                            bestDiff = diff;
-                            bestIndex = index;
+                            offsetMatch.NorthSouthDistance = line.Length;
+                            offsetMatch.NorthSouthDirection = direction;
                         }
-                    }
-
-                    if (bestIndex != -1 && bestDiff <= tolerance)
-                    {
-                        var matched = offsetValues[bestIndex].Value;
-                        offsetValues.RemoveAt(bestIndex);
-
-                        var formatted = matched.ToString("F1", CultureInfo.InvariantCulture) + " " + cell.Direction;
-                        table.Cells[cell.Row, cell.Column].TextString = formatted;
-                        updatedCount++;
                     }
                     else
                     {
-                        table.Cells[cell.Row, cell.Column].TextString = cell.OriginalText;
-                        table.Cells[cell.Row, cell.Column].BackgroundColor = Color.FromRgb(255, 0, 0);
-                        noMatchCount++;
+                        if (!offsetMatch.EastWestDistance.HasValue || line.Length < offsetMatch.EastWestDistance.Value)
+                        {
+                            offsetMatch.EastWestDistance = line.Length;
+                            offsetMatch.EastWestDirection = direction;
+                        }
+                    }
+
+                    offsetsByLabel[closestLabel] = offsetMatch;
+                }
+
+                table.UpgradeOpen();
+
+                foreach (var entry in labelRows.OrderBy(item => item.Value))
+                {
+                    var label = entry.Key;
+                    var row = entry.Value;
+                    offsetsByLabel.TryGetValue(label, out var offsetMatch);
+
+                    for (var index = 0; index < columnsToCheck.Length; index++)
+                    {
+                        var column = columnsToCheck[index];
+                        var originalText = table.Cells[row, column].TextString;
+
+                        var isNorthSouth = column == columnsToCheck[0];
+                        var distance = isNorthSouth ? offsetMatch?.NorthSouthDistance : offsetMatch?.EastWestDistance;
+                        var direction = isNorthSouth ? offsetMatch?.NorthSouthDirection : offsetMatch?.EastWestDirection;
+
+                        if (distance.HasValue && direction.HasValue)
+                        {
+                            var formatted = distance.Value.ToString("F1", CultureInfo.InvariantCulture) + " " + direction.Value;
+                            table.Cells[row, column].TextString = formatted;
+                            updatedCount++;
+                        }
+                        else
+                        {
+                            table.Cells[row, column].TextString = originalText;
+                            table.Cells[row, column].BackgroundColor = Color.FromRgb(255, 0, 0);
+                            noMatchCount++;
+                        }
                     }
                 }
 
@@ -922,6 +922,14 @@ public class DrillCadToolService
             _log.Error($"UpdateOffsets: {ex.Message}", ex);
             MessageBox.Show($"Error updating offsets: {ex.Message}", "Update Offsets", MessageBoxButton.OK, MessageBoxImage.Error);
         }
+    }
+
+    private sealed class OffsetMatch
+    {
+        public double? NorthSouthDistance { get; set; }
+        public char? NorthSouthDirection { get; set; }
+        public double? EastWestDistance { get; set; }
+        public char? EastWestDirection { get; set; }
     }
 
     private static List<string> ExtractBottomHoleValues(Table table)
