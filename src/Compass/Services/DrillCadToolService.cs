@@ -733,44 +733,40 @@ public class DrillCadToolService
                 }
 
                 var columnsToCheck = new[] { 2, 3 };
-                if (table.Columns.Count <= columnsToCheck.Max())
+                var coordinateColumns = new[] { 4, 5 };
+                var requiredColumn = Math.Max(columnsToCheck.Max(), coordinateColumns.Max());
+                if (table.Columns.Count <= requiredColumn)
                 {
-                    MessageBox.Show("The selected table does not contain columns C and D.", "Update Offsets", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    _log.Info("Update Offsets: Table missing columns C/D.");
+                    MessageBox.Show("The selected table does not contain columns C through F.", "Update Offsets", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    _log.Info("Update Offsets: Table missing columns C-F.");
                     return;
                 }
 
-                var labelRows = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+                var rowPoints = new Dictionary<int, Point3d>();
                 for (var row = 0; row < table.Rows.Count; row++)
                 {
-                    for (var column = 0; column < table.Columns.Count; column++)
+                    var northingText = table.Cells[row, coordinateColumns[0]].TextString;
+                    var eastingText = table.Cells[row, coordinateColumns[1]].TextString;
+
+                    if (!TryParseTableDouble(northingText, out var northing) ||
+                        !TryParseTableDouble(eastingText, out var easting))
                     {
-                        var text = table.Cells[row, column].TextString?.Trim() ?? string.Empty;
-                        if (!DrillParsers.IsGridLabel(text))
-                        {
-                            continue;
-                        }
-
-                        if (!labelRows.ContainsKey(text))
-                        {
-                            labelRows[text] = row;
-                        }
-
-                        break;
+                        continue;
                     }
+
+                    rowPoints[row] = new Point3d(easting, northing, 0);
                 }
 
-                if (labelRows.Count == 0)
+                if (rowPoints.Count == 0)
                 {
-                    MessageBox.Show("No drill point labels found in the selected table.", "Update Offsets", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    _log.Info("Update Offsets: No drill point labels found in table.");
+                    MessageBox.Show("No northing/easting values found in columns E and F.", "Update Offsets", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    _log.Info("Update Offsets: No northing/easting values found in columns E/F.");
                     return;
                 }
 
                 var blockTable = (BlockTable)transaction.GetObject(database.BlockTableId, OpenMode.ForRead);
                 var modelSpace = (BlockTableRecord)transaction.GetObject(blockTable[BlockTableRecord.ModelSpace], OpenMode.ForRead);
 
-                var drillPoints = new Dictionary<string, Point3d>(StringComparer.OrdinalIgnoreCase);
                 var offsetLines = new List<Line>();
                 foreach (ObjectId entityId in modelSpace)
                 {
@@ -779,30 +775,10 @@ public class DrillCadToolService
                         continue;
                     }
 
-                    if (entity.Layer.Equals(DrillPointsLayer, StringComparison.OrdinalIgnoreCase))
-                    {
-                        switch (entity)
-                        {
-                            case DBText text when DrillParsers.IsGridLabel(text.TextString):
-                                drillPoints[text.TextString.Trim()] = text.Position;
-                                break;
-                            case MText mText when DrillParsers.IsGridLabel(mText.Contents):
-                                drillPoints[mText.Contents.Trim()] = mText.Location;
-                                break;
-                        }
-                    }
-
                     if (entity.Layer.Equals(OffsetsLayer, StringComparison.OrdinalIgnoreCase) && entity is Line line)
                     {
                         offsetLines.Add(line);
                     }
-                }
-
-                if (drillPoints.Count == 0)
-                {
-                    MessageBox.Show($"No drill point labels found on layer \"{DrillPointsLayer}\".", "Update Offsets", MessageBoxButton.OK, MessageBoxImage.Information);
-                    _log.Info("Update Offsets: No drill points found on Z-DRILL-POINT layer.");
-                    return;
                 }
 
                 if (offsetLines.Count == 0)
@@ -812,10 +788,10 @@ public class DrillCadToolService
                     return;
                 }
 
-                var offsetsByLabel = new Dictionary<string, OffsetMatch>(StringComparer.OrdinalIgnoreCase);
-                foreach (var label in drillPoints.Keys)
+                var offsetsByRow = new Dictionary<int, OffsetMatch>();
+                foreach (var row in rowPoints.Keys)
                 {
-                    offsetsByLabel[label] = new OffsetMatch();
+                    offsetsByRow[row] = new OffsetMatch();
                 }
 
                 const double pointTolerance = 1.0;
@@ -824,66 +800,54 @@ public class DrillCadToolService
 
                 foreach (var line in offsetLines)
                 {
-                    string? closestLabel = null;
-                    Point3d closestPoint = Point3d.Origin;
-                    Point3d closestEndpoint = Point3d.Origin;
-                    var closestDistance = double.MaxValue;
-
-                    foreach (var entry in drillPoints)
+                    foreach (var entry in rowPoints)
                     {
-                        var startDistance = line.StartPoint.DistanceTo(entry.Value);
-                        var endDistance = line.EndPoint.DistanceTo(entry.Value);
+                        var anchorPoint = entry.Value;
+                        var startDistance = line.StartPoint.DistanceTo(anchorPoint);
+                        var endDistance = line.EndPoint.DistanceTo(anchorPoint);
                         var minDistance = Math.Min(startDistance, endDistance);
 
-                        if (minDistance <= pointTolerance && minDistance < closestDistance)
+                        if (minDistance > pointTolerance)
                         {
-                            closestLabel = entry.Key;
-                            closestPoint = entry.Value;
-                            closestEndpoint = startDistance <= endDistance ? line.StartPoint : line.EndPoint;
-                            closestDistance = minDistance;
+                            continue;
                         }
-                    }
 
-                    if (closestLabel == null)
-                    {
-                        continue;
-                    }
+                        var anchorEndpoint = startDistance <= endDistance ? line.StartPoint : line.EndPoint;
+                        var otherEndpoint = startDistance <= endDistance ? line.EndPoint : line.StartPoint;
+                        var vector = otherEndpoint - anchorEndpoint;
+                        var isNorthSouth = Math.Abs(vector.Y) >= Math.Abs(vector.X);
+                        var direction = isNorthSouth
+                            ? (vector.Y >= 0 ? 'N' : 'S')
+                            : (vector.X >= 0 ? 'E' : 'W');
 
-                    var otherEndpoint = closestEndpoint.DistanceTo(line.StartPoint) <= pointTolerance ? line.EndPoint : line.StartPoint;
-                    var vector = otherEndpoint - closestEndpoint;
-                    var isNorthSouth = Math.Abs(vector.Y) >= Math.Abs(vector.X);
-                    var direction = isNorthSouth
-                        ? (vector.Y >= 0 ? 'N' : 'S')
-                        : (vector.X >= 0 ? 'E' : 'W');
-
-                    var offsetMatch = offsetsByLabel[closestLabel];
-                    if (isNorthSouth)
-                    {
-                        if (!offsetMatch.NorthSouthDistance.HasValue || line.Length < offsetMatch.NorthSouthDistance.Value)
+                        var offsetMatch = offsetsByRow[entry.Key];
+                        if (isNorthSouth)
                         {
-                            offsetMatch.NorthSouthDistance = line.Length;
-                            offsetMatch.NorthSouthDirection = direction;
+                            if (!offsetMatch.NorthSouthDistance.HasValue || line.Length < offsetMatch.NorthSouthDistance.Value)
+                            {
+                                offsetMatch.NorthSouthDistance = line.Length;
+                                offsetMatch.NorthSouthDirection = direction;
+                            }
                         }
-                    }
-                    else
-                    {
-                        if (!offsetMatch.EastWestDistance.HasValue || line.Length < offsetMatch.EastWestDistance.Value)
+                        else
                         {
-                            offsetMatch.EastWestDistance = line.Length;
-                            offsetMatch.EastWestDirection = direction;
+                            if (!offsetMatch.EastWestDistance.HasValue || line.Length < offsetMatch.EastWestDistance.Value)
+                            {
+                                offsetMatch.EastWestDistance = line.Length;
+                                offsetMatch.EastWestDirection = direction;
+                            }
                         }
-                    }
 
-                    offsetsByLabel[closestLabel] = offsetMatch;
+                        offsetsByRow[entry.Key] = offsetMatch;
+                    }
                 }
 
                 table.UpgradeOpen();
 
-                foreach (var entry in labelRows.OrderBy(item => item.Value))
+                foreach (var entry in rowPoints.OrderBy(item => item.Key))
                 {
-                    var label = entry.Key;
-                    var row = entry.Value;
-                    offsetsByLabel.TryGetValue(label, out var offsetMatch);
+                    var row = entry.Key;
+                    offsetsByRow.TryGetValue(row, out var offsetMatch);
 
                     for (var index = 0; index < columnsToCheck.Length; index++)
                     {
@@ -930,6 +894,18 @@ public class DrillCadToolService
         public char? NorthSouthDirection { get; set; }
         public double? EastWestDistance { get; set; }
         public char? EastWestDirection { get; set; }
+    }
+
+    private static bool TryParseTableDouble(string? text, out double value)
+    {
+        value = 0;
+        var cleaned = Regex.Replace(text ?? string.Empty, @"\{.*?;", string.Empty);
+        cleaned = cleaned.Replace("}", string.Empty).Trim();
+        return double.TryParse(
+            cleaned,
+            NumberStyles.Float | NumberStyles.AllowThousands,
+            CultureInfo.InvariantCulture,
+            out value);
     }
 
     private static List<string> ExtractBottomHoleValues(Table table)
