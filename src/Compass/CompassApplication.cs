@@ -73,6 +73,8 @@ public class CompassApplication : IExtensionApplication
         RegisterModule(new HybridManagerModule());
         RegisterModule(new WorkspaceManagerModule());
         RegisterModule(new OnestopManagerModule());
+        // Register the Surface Impact Table module so it's available under the Compass tab
+        RegisterModule(new SurfaceImpactTableModule());
     }
 
     public static void RegisterModule(ICompassModule module)

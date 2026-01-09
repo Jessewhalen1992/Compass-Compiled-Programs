@@ -14,7 +14,7 @@ public class WorkspaceManagerModule : ManagedPluginModuleBase
     };
 
     public override string Id => "workspace-manager";
-    public override string DisplayName => "Workspace Manager";
+    public override string DisplayName => "Workspace Builder";
     public override string Description => "Workspace Generator Tool";
 
     protected override IReadOnlyList<string> CandidateDllPaths => CandidatePaths;
