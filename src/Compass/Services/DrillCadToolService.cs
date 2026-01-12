@@ -704,6 +704,16 @@ public class DrillCadToolService
             return;
         }
 
+        var confirm = MessageBox.Show(
+            "ARE YOU IN GROUND?",
+            "Update Offsets",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Question);
+        if (confirm != MessageBoxResult.Yes)
+        {
+            return;
+        }
+
         var editor = document.Editor;
         var database = document.Database;
 
@@ -732,41 +742,295 @@ public class DrillCadToolService
                     return;
                 }
 
-                var columnsToCheck = new[] { 2, 3 };
-                var coordinateColumns = new[] { 4, 5 };
-                var requiredColumn = Math.Max(columnsToCheck.Max(), coordinateColumns.Max());
-                if (table.Columns.Count <= requiredColumn)
+                var columnsToUpdate = new[] { 2, 3 }; // C, D
+                if (table.Columns.Count <= columnsToUpdate.Max())
                 {
-                    MessageBox.Show("The selected table does not contain columns C through F.", "Update Offsets", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    _log.Info("Update Offsets: Table missing columns C-F.");
+                    MessageBox.Show("The selected table does not contain columns C and D.", "Update Offsets", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    _log.Info("Update Offsets: Table missing columns C/D.");
                     return;
                 }
 
-                var rowPoints = new Dictionary<int, Point3d>();
-                for (var row = 0; row < table.Rows.Count; row++)
-                {
-                    var northingText = table.Cells[row, coordinateColumns[0]].TextString;
-                    var eastingText = table.Cells[row, coordinateColumns[1]].TextString;
+                // -----------------------------
+                // Local helpers (self-contained)
+                // -----------------------------
+                var tagRegex = new Regex("^[A-Z][1-9][0-9]*$", RegexOptions.IgnoreCase);
 
-                    if (!TryParseTableDouble(northingText, out var northing) ||
-                        !TryParseTableDouble(eastingText, out var easting))
+                string Clean(string? text)
+                {
+                    var cleaned = Regex.Replace(text ?? string.Empty, @"\{.*?;", string.Empty);
+                    cleaned = cleaned.Replace("}", string.Empty);
+                    cleaned = cleaned.Replace("\\P", " ");
+                    return cleaned.Trim();
+                }
+
+                string NormalizeKey(string? text)
+                {
+                    var cleaned = Clean(text);
+                    return cleaned.ToUpperInvariant().Replace(" ", string.Empty);
+                }
+
+                bool RowHasAnyText(int row)
+                {
+                    for (var col = 0; col < table.Columns.Count; col++)
+                    {
+                        if (!string.IsNullOrWhiteSpace(Clean(table.Cells[row, col].TextString)))
+                        {
+                            return true;
+                        }
+                    }
+                    return false;
+                }
+
+                bool TryGetGridTag(string? text, out string tag)
+                {
+                    tag = string.Empty;
+                    var cleaned = Clean(text);
+                    if (string.IsNullOrWhiteSpace(cleaned))
+                    {
+                        return false;
+                    }
+
+                    var parts = cleaned.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+                    foreach (var part in parts)
+                    {
+                        var token = part.Trim();
+                        if (tagRegex.IsMatch(token))
+                        {
+                            tag = token.ToUpperInvariant();
+                            return true;
+                        }
+                    }
+
+                    return false;
+                }
+
+                (bool Ok, char Letter, int Number) ParseTag(string tag)
+                {
+                    if (string.IsNullOrWhiteSpace(tag) || tag.Length < 2)
+                    {
+                        return (false, '\0', 0);
+                    }
+
+                    var letter = char.ToUpperInvariant(tag[0]);
+                    if (letter < 'A' || letter > 'Z')
+                    {
+                        return (false, '\0', 0);
+                    }
+
+                    if (!int.TryParse(tag.Substring(1), NumberStyles.Integer, CultureInfo.InvariantCulture, out var number))
+                    {
+                        return (false, '\0', 0);
+                    }
+
+                    return (true, letter, number);
+                }
+
+                char? ExtractDirectionLetter(string? cellText)
+                {
+                    var cleaned = Clean(cellText);
+                    if (string.IsNullOrWhiteSpace(cleaned))
+                    {
+                        return null;
+                    }
+
+                    for (var i = cleaned.Length - 1; i >= 0; i--)
+                    {
+                        var c = cleaned[i];
+                        var upper = char.ToUpperInvariant(c);
+                        if (upper == 'N' || upper == 'S' || upper == 'E' || upper == 'W')
+                        {
+                            return c; // preserve original casing
+                        }
+                    }
+
+                    return null;
+                }
+
+                // ----------------------------------------------------
+                // 1) Read drill point anchors by tag from Z-DRILL-POINT
+                // ----------------------------------------------------
+                var blockTable = (BlockTable)transaction.GetObject(database.BlockTableId, OpenMode.ForRead);
+                var modelSpace = (BlockTableRecord)transaction.GetObject(blockTable[BlockTableRecord.ModelSpace], OpenMode.ForRead);
+
+                var drillPointByTag = new Dictionary<string, Point3d>(StringComparer.OrdinalIgnoreCase);
+
+                foreach (ObjectId id in modelSpace)
+                {
+                    if (transaction.GetObject(id, OpenMode.ForRead) is not Entity entity)
                     {
                         continue;
                     }
 
-                    rowPoints[row] = new Point3d(easting, northing, 0);
+                    if (!entity.Layer.Equals(DrillPointsLayer, StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
+                    switch (entity)
+                    {
+                        case DBText dbText:
+                            if (TryGetGridTag(dbText.TextString, out var dbTag) && !drillPointByTag.ContainsKey(dbTag))
+                            {
+                                drillPointByTag[dbTag] = dbText.Position;
+                            }
+                            break;
+
+                        case MText mText:
+                            if (TryGetGridTag(mText.Contents, out var mtTag) && !drillPointByTag.ContainsKey(mtTag))
+                            {
+                                drillPointByTag[mtTag] = mText.Location;
+                            }
+                            break;
+                    }
                 }
 
-                if (rowPoints.Count == 0)
+                if (drillPointByTag.Count == 0)
                 {
-                    MessageBox.Show("No northing/easting values found in columns E and F.", "Update Offsets", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    _log.Info("Update Offsets: No northing/easting values found in columns E/F.");
+                    MessageBox.Show($"No drill point labels found on layer \"{DrillPointsLayer}\".", "Update Offsets", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    _log.Info("Update Offsets: No Z-DRILL-POINT labels found.");
                     return;
                 }
 
-                var blockTable = (BlockTable)transaction.GetObject(database.BlockTableId, OpenMode.ForRead);
-                var modelSpace = (BlockTableRecord)transaction.GetObject(blockTable[BlockTableRecord.ModelSpace], OpenMode.ForRead);
+                // Available letters in the drawing (A, B, C...) – used to map each SURFACE..BOTTOM HOLE block.
+                var lettersAvailable = drillPointByTag.Keys
+                    .Select(t => ParseTag(t))
+                    .Where(p => p.Ok)
+                    .Select(p => p.Letter)
+                    .Distinct()
+                    .OrderBy(c => c)
+                    .ToList();
 
+                if (lettersAvailable.Count == 0)
+                {
+                    MessageBox.Show("No valid drill point tags (e.g., A1, B2) were found on Z-DRILL-POINT.", "Update Offsets", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    _log.Info("Update Offsets: Drill point tags existed but none parsed as A1/B2 style.");
+                    return;
+                }
+
+                // ------------------------------------------------------------
+                // 2) Build row -> expected tag mapping using SURFACE/BOTTOM HOLE
+                // ------------------------------------------------------------
+                var groups = new List<List<int>>();
+                List<int>? currentGroup = null;
+
+                for (var row = 0; row < table.Rows.Count; row++)
+                {
+                    var col0 = NormalizeKey(table.Cells[row, 0].TextString);
+                    var isSurface = col0.Contains("SURFACE");
+                    var isBottomHole = col0.Contains("BOTTOMHOLE");
+
+                    if (isSurface)
+                    {
+                        if (currentGroup != null && currentGroup.Count > 0)
+                        {
+                            groups.Add(currentGroup);
+                        }
+
+                        currentGroup = new List<int>();
+                    }
+
+                    if (currentGroup != null)
+                    {
+                        if (RowHasAnyText(row))
+                        {
+                            currentGroup.Add(row);
+                        }
+
+                        if (isBottomHole)
+                        {
+                            groups.Add(currentGroup);
+                            currentGroup = null;
+                        }
+                    }
+                }
+
+                if (currentGroup != null && currentGroup.Count > 0)
+                {
+                    groups.Add(currentGroup);
+                }
+
+                // Fallback if SURFACE/BOTTOM HOLE blocks weren't found:
+                // map “offset-looking rows” in order to tags in order.
+                var expectedTagByRow = new Dictionary<int, string>();
+                if (groups.Count == 0)
+                {
+                    var orderedTags = drillPointByTag.Keys
+                        .Select(t => new { Tag = t, Parsed = ParseTag(t) })
+                        .Where(x => x.Parsed.Ok)
+                        .OrderBy(x => x.Parsed.Letter)
+                        .ThenBy(x => x.Parsed.Number)
+                        .Select(x => x.Tag)
+                        .ToList();
+
+                    var candidateRows = new List<int>();
+                    for (var row = 0; row < table.Rows.Count; row++)
+                    {
+                        var cDir = ExtractDirectionLetter(table.Cells[row, columnsToUpdate[0]].TextString);
+                        var dDir = ExtractDirectionLetter(table.Cells[row, columnsToUpdate[1]].TextString);
+                        if ((cDir.HasValue || dDir.HasValue) && RowHasAnyText(row))
+                        {
+                            candidateRows.Add(row);
+                        }
+                    }
+
+                    var count = Math.Min(candidateRows.Count, orderedTags.Count);
+                    for (var i = 0; i < count; i++)
+                    {
+                        expectedTagByRow[candidateRows[i]] = orderedTags[i];
+                    }
+                }
+                else
+                {
+                    for (var groupIndex = 0; groupIndex < groups.Count; groupIndex++)
+                    {
+                        char letter;
+                        if (groupIndex < lettersAvailable.Count)
+                        {
+                            letter = lettersAvailable[groupIndex];
+                        }
+                        else
+                        {
+                            // If the table has more groups than letters found, continue after the last known letter.
+                            var last = lettersAvailable[lettersAvailable.Count - 1];
+                            var offset = groupIndex - lettersAvailable.Count + 1;
+                            letter = (char)(last + offset);
+                        }
+
+                        var rowNumber = 1;
+                        foreach (var row in groups[groupIndex])
+                        {
+                            expectedTagByRow[row] = $"{letter}{rowNumber}";
+                            rowNumber++;
+                        }
+                    }
+                }
+
+                if (expectedTagByRow.Count == 0)
+                {
+                    MessageBox.Show(
+                        "Could not determine any rows to update.\n" +
+                        "Expected SURFACE..BOTTOM HOLE groups in column A, or offset rows with N/S/E/W in columns C/D.",
+                        "Update Offsets",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+
+                    _log.Info("Update Offsets: No expectedTagByRow entries created.");
+                    return;
+                }
+
+                // Map row -> anchor point (only if that tag exists in the drawing)
+                var anchorPointByRow = new Dictionary<int, Point3d>();
+                foreach (var kvp in expectedTagByRow)
+                {
+                    if (drillPointByTag.TryGetValue(kvp.Value, out var pt))
+                    {
+                        anchorPointByRow[kvp.Key] = pt;
+                    }
+                }
+
+                // ----------------------------------------
+                // 3) Collect offset lines on P-Drill-Offset
+                // ----------------------------------------
                 var offsetLines = new List<Line>();
                 foreach (ObjectId entityId in modelSpace)
                 {
@@ -788,21 +1052,24 @@ public class DrillCadToolService
                     return;
                 }
 
+                // ----------------------------------------------------
+                // 4) For each anchor row, find its 2 connected lines
+                // ----------------------------------------------------
                 var offsetsByRow = new Dictionary<int, OffsetMatch>();
-                foreach (var row in rowPoints.Keys)
+                foreach (var row in expectedTagByRow.Keys)
                 {
                     offsetsByRow[row] = new OffsetMatch();
                 }
 
                 const double pointTolerance = 1.0;
-                var updatedCount = 0;
-                var noMatchCount = 0;
 
                 foreach (var line in offsetLines)
                 {
-                    foreach (var entry in rowPoints)
+                    foreach (var entry in anchorPointByRow)
                     {
+                        var row = entry.Key;
                         var anchorPoint = entry.Value;
+
                         var startDistance = line.StartPoint.DistanceTo(anchorPoint);
                         var endDistance = line.EndPoint.DistanceTo(anchorPoint);
                         var minDistance = Math.Min(startDistance, endDistance);
@@ -812,62 +1079,65 @@ public class DrillCadToolService
                             continue;
                         }
 
-                        var anchorEndpoint = startDistance <= endDistance ? line.StartPoint : line.EndPoint;
-                        var otherEndpoint = startDistance <= endDistance ? line.EndPoint : line.StartPoint;
-                        var vector = otherEndpoint - anchorEndpoint;
-                        var isNorthSouth = Math.Abs(vector.Y) >= Math.Abs(vector.X);
-                        var direction = isNorthSouth
-                            ? (vector.Y >= 0 ? 'N' : 'S')
-                            : (vector.X >= 0 ? 'E' : 'W');
+                        // Orientation decides C vs D; direction letter is preserved from the table cell.
+                        var dx = Math.Abs(line.EndPoint.X - line.StartPoint.X);
+                        var dy = Math.Abs(line.EndPoint.Y - line.StartPoint.Y);
+                        var isNorthSouth = dy >= dx;
 
-                        var offsetMatch = offsetsByRow[entry.Key];
+                        var match = offsetsByRow[row];
                         if (isNorthSouth)
                         {
-                            if (!offsetMatch.NorthSouthDistance.HasValue || line.Length < offsetMatch.NorthSouthDistance.Value)
+                            if (!match.NorthSouthDistance.HasValue || line.Length < match.NorthSouthDistance.Value)
                             {
-                                offsetMatch.NorthSouthDistance = line.Length;
-                                offsetMatch.NorthSouthDirection = direction;
+                                match.NorthSouthDistance = line.Length;
                             }
                         }
                         else
                         {
-                            if (!offsetMatch.EastWestDistance.HasValue || line.Length < offsetMatch.EastWestDistance.Value)
+                            if (!match.EastWestDistance.HasValue || line.Length < match.EastWestDistance.Value)
                             {
-                                offsetMatch.EastWestDistance = line.Length;
-                                offsetMatch.EastWestDirection = direction;
+                                match.EastWestDistance = line.Length;
                             }
                         }
 
-                        offsetsByRow[entry.Key] = offsetMatch;
+                        offsetsByRow[row] = match;
                     }
                 }
 
+                // ------------------------
+                // 5) Update table cells C/D
+                // ------------------------
                 table.UpgradeOpen();
 
-                foreach (var entry in rowPoints.OrderBy(item => item.Key))
+                var updatedCount = 0;
+                var noMatchCount = 0;
+
+                foreach (var row in expectedTagByRow.Keys.OrderBy(r => r))
                 {
-                    var row = entry.Key;
-                    offsetsByRow.TryGetValue(row, out var offsetMatch);
+                    offsetsByRow.TryGetValue(row, out var match);
 
-                    for (var index = 0; index < columnsToCheck.Length; index++)
+                    for (var i = 0; i < columnsToUpdate.Length; i++)
                     {
-                        var column = columnsToCheck[index];
-                        var originalText = table.Cells[row, column].TextString;
+                        var col = columnsToUpdate[i];
+                        var originalText = table.Cells[row, col].TextString;
 
-                        var isNorthSouth = column == columnsToCheck[0];
-                        var distance = isNorthSouth ? offsetMatch?.NorthSouthDistance : offsetMatch?.EastWestDistance;
-                        var direction = isNorthSouth ? offsetMatch?.NorthSouthDirection : offsetMatch?.EastWestDirection;
+                        var isNorthSouth = col == columnsToUpdate[0];
+                        var distance = isNorthSouth ? match?.NorthSouthDistance : match?.EastWestDistance;
+
+                        // Direction must come from the original cell, always.
+                        var direction = ExtractDirectionLetter(originalText);
 
                         if (distance.HasValue && direction.HasValue)
                         {
-                            var formatted = distance.Value.ToString("F1", CultureInfo.InvariantCulture) + " " + direction.Value;
-                            table.Cells[row, column].TextString = formatted;
+                            table.Cells[row, col].TextString =
+                                distance.Value.ToString("F1", CultureInfo.InvariantCulture) + " " + direction.Value;
                             updatedCount++;
                         }
                         else
                         {
-                            table.Cells[row, column].TextString = originalText;
-                            table.Cells[row, column].BackgroundColor = Color.FromRgb(255, 0, 0);
+                            // keep original text, but mark as problem
+                            table.Cells[row, col].TextString = originalText;
+                            table.Cells[row, col].BackgroundColor = Color.FromRgb(255, 0, 0);
                             noMatchCount++;
                         }
                     }
@@ -906,6 +1176,65 @@ public class DrillCadToolService
             NumberStyles.Float | NumberStyles.AllowThousands,
             CultureInfo.InvariantCulture,
             out value);
+    }
+
+    // Used by UpdateOffsets for coordinate cells (E/F): tolerate spaces/NBSP as thousands separators.
+    private static bool TryParseTableCoordinateDouble(string? text, out double value)
+    {
+        value = 0;
+
+        var cleaned = Regex.Replace(text ?? string.Empty, @"\{.*?;", string.Empty);
+        cleaned = cleaned.Replace("}", string.Empty).Trim();
+
+        cleaned = cleaned.Replace(" ", string.Empty)
+            .Replace("\u00A0", string.Empty); // non-breaking space
+
+        if (double.TryParse(cleaned, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out value))
+        {
+            return true;
+        }
+
+        if (double.TryParse(cleaned, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.CurrentCulture, out value))
+        {
+            return true;
+        }
+
+        var normalized = cleaned;
+        if (normalized.Count(c => c == ',') == 1 && !normalized.Contains('.'))
+        {
+            normalized = normalized.Replace(',', '.');
+            if (double.TryParse(normalized, NumberStyles.Float, CultureInfo.InvariantCulture, out value))
+            {
+                return true;
+            }
+        }
+
+        normalized = Regex.Replace(cleaned, @"[^0-9\.\-]", string.Empty);
+        return double.TryParse(normalized, NumberStyles.Float, CultureInfo.InvariantCulture, out value);
+    }
+
+    // Pull the direction letter from the existing cell text (C/D) so we can preserve it.
+    private static char? TryExtractDirectionLetter(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return null;
+        }
+
+        var cleaned = Regex.Replace(text, @"\{.*?;", string.Empty);
+        cleaned = cleaned.Replace("}", string.Empty).Trim();
+
+        for (var i = cleaned.Length - 1; i >= 0; i--)
+        {
+            var c = cleaned[i];
+            var upper = char.ToUpperInvariant(c);
+            if (upper == 'N' || upper == 'S' || upper == 'E' || upper == 'W')
+            {
+                return c; // preserve original casing
+            }
+        }
+
+        return null;
     }
 
     private static List<string> ExtractBottomHoleValues(Table table)
@@ -1813,5 +2142,4 @@ public class DrillCadToolService
     {
         AutoCADApplication.ShowAlertDialog(message);
     }
-
 }
