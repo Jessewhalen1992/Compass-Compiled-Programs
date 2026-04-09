@@ -2,6 +2,7 @@ using Compass;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.Runtime;
 using Compass.Infrastructure;
 using Compass.Modules;
@@ -21,22 +22,26 @@ public class CompassApplication : IExtensionApplication
 
     public void Initialize()
     {
+        CompassStartupDiagnostics.Log("CompassApplication.Initialize started.");
         CompassEnvironment.Initialize();
         EnsureModules();
         EnsureCompassPaletteTab();
 
-        // Explicitly initialize other modules so they add their tabs
-        new FormatTablesApplication().Initialize();
-        new CompassToolsApplication().Initialize();
-        new CompassLegalApplication().Initialize();
-        new CogoApplication().Initialize();
+        // Initialize companion tabs so the full palette is ready immediately after NETLOAD.
+        TryInitializeCompanionTab("Format Tables", () => new FormatTablesApplication().Initialize());
+        TryInitializeCompanionTab("Tools", () => new CompassToolsApplication().Initialize());
+        TryInitializeCompanionTab("Legal", () => new CompassLegalApplication().Initialize());
+        TryInitializeCompanionTab("COGO", () => new CogoApplication().Initialize());
+        UnifiedPaletteHost.ShowPalette("Compass");
+        CompassStartupDiagnostics.Log("CompassApplication.Initialize completed.");
     }
 
     public void Terminate()
     {
         try
         {
-            GetDrillManagerModule().SaveState();
+            var drillManagerModule = ModuleList.OfType<DrillManagerModule>().FirstOrDefault();
+            drillManagerModule?.SaveState();
         }
         catch (System.Exception)
         {
@@ -53,9 +58,20 @@ public class CompassApplication : IExtensionApplication
     [CommandMethod("Compass", CommandFlags.Modal | CommandFlags.Session)]
     public static void ShowCompass()
     {
-        EnsureModules();
-        EnsureCompassPaletteTab();
-        UnifiedPaletteHost.ShowPalette("Compass");
+        CompassStartupDiagnostics.Log("Compass command invoked.");
+
+        try
+        {
+            EnsureModules();
+            EnsureCompassPaletteTab();
+            UnifiedPaletteHost.ShowPalette("Compass");
+            CompassStartupDiagnostics.Log("Compass command completed.");
+        }
+        catch (System.Exception ex)
+        {
+            CompassStartupDiagnostics.LogException("Compass command", ex);
+            Application.ShowAlertDialog("Compass failed to start. See " + CompassStartupDiagnostics.LogPath);
+        }
     }
 
     private static void EnsureModules()
@@ -65,6 +81,7 @@ public class CompassApplication : IExtensionApplication
             return;
         }
 
+        CompassStartupDiagnostics.Log("Registering Compass modules.");
         RegisterModule(new DrillManagerModule());
         RegisterModule(new ProfileManagerModule());
         RegisterModule(new SectionGeneratorModule());
@@ -105,6 +122,7 @@ public class CompassApplication : IExtensionApplication
             return;
         }
 
+        CompassStartupDiagnostics.Log("Creating Compass palette tab.");
         _compassControl = new CompassControl();
         _compassControl.ModuleRequested += OnModuleRequested;
 
@@ -138,5 +156,20 @@ public class CompassApplication : IExtensionApplication
         }
 
         return module;
+    }
+
+    private static void TryInitializeCompanionTab(string tabName, Action initialize)
+    {
+        CompassStartupDiagnostics.Log("Initializing companion tab '" + tabName + "'.");
+
+        try
+        {
+            initialize();
+            CompassStartupDiagnostics.Log("Initialized companion tab '" + tabName + "'.");
+        }
+        catch (System.Exception ex)
+        {
+            CompassStartupDiagnostics.LogException("Initialize companion tab '" + tabName + "'", ex);
+        }
     }
 }

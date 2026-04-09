@@ -30,6 +30,7 @@ public class DrillCadToolService
     private const string OffsetsLayer = "P-Drill-Offset";
     private const string HorizontalLayer = "L-SEC-HB";
     private const string CordsDirectory = @"C:\\CORDS";
+    private static readonly Regex HeadingLabelRegex = new(@"\b(?:ICP|HEEL|LANDING)\b", RegexOptions.IgnoreCase);
     private static readonly string[] CordsExecutableSearchPaths =
     {
         @"C:\\AUTOCAD-SETUP CG\\CG_LISP\\COMPASS\\cords.exe",
@@ -39,6 +40,48 @@ public class DrillCadToolService
     private readonly ILog _log;
     private readonly LayerService _layerService;
     private readonly NaturalStringComparer _naturalComparer = new();
+
+    private sealed class GridPointCoordinate
+    {
+        public GridPointCoordinate(string label, double northing, double easting)
+        {
+            Label = label;
+            Northing = northing;
+            Easting = easting;
+        }
+
+        public string Label { get; }
+
+        public double Northing { get; }
+
+        public double Easting { get; }
+    }
+
+    private sealed class LabeledPoint
+    {
+        public LabeledPoint(string label, Point3d point)
+        {
+            Label = label;
+            Point = point;
+        }
+
+        public string Label { get; }
+
+        public Point3d Point { get; }
+    }
+
+    private sealed class TableCellLocation
+    {
+        public TableCellLocation(int row, int column)
+        {
+            Row = row;
+            Column = column;
+        }
+
+        public int Row { get; }
+
+        public int Column { get; }
+    }
 
     public DrillCadToolService(ILog log, LayerService layerService)
     {
@@ -133,7 +176,7 @@ public class DrillCadToolService
 
         try
         {
-            var headingLabel = string.Equals(heading, "HEEL", StringComparison.OrdinalIgnoreCase) ? "HEEL" : "ICP";
+            var headingLabel = NormalizeHeadingLabel(heading);
             var surfaceOptions = new PromptEntityOptions("\nSelect the data-linked table containing 'SURFACE':")
             {
                 AllowObjectOnLockedLayer = true
@@ -148,7 +191,7 @@ public class DrillCadToolService
                 return;
             }
 
-            List<(int Row, int Column)> surfaceCells;
+            List<TableCellLocation> surfaceCells;
             using (var transaction = database.TransactionManager.StartTransaction())
             {
                 if (transaction.GetObject(surfaceResult.ObjectId, OpenMode.ForRead) is not Table surfaceTable)
@@ -185,7 +228,9 @@ public class DrillCadToolService
                 for (var i = 0; i < nonDefault.Count; i++)
                 {
                     var drillName = nonDefault[i];
-                    var (row, column) = surfaceCells[i];
+                    var surfaceCell = surfaceCells[i];
+                    var row = surfaceCell.Row;
+                    var column = surfaceCell.Column;
                     if (transaction.GetObject(surfaceResult.ObjectId, OpenMode.ForRead) is not Table surfaceTable)
                     {
                         continue;
@@ -523,7 +568,7 @@ public class DrillCadToolService
         {
             var database = document.Database;
             var textEntities = GetEntitiesOnLayer(database, DrillPointsLayer, typeof(DBText), typeof(MText)).ToList();
-            var gridPoints = new List<(string Label, Point3d Point)>();
+            var gridPoints = new List<LabeledPoint>();
             var gridRegex = new Regex("^[A-Z][1-9][0-9]{0,2}$", RegexOptions.IgnoreCase);
 
             foreach (var entity in textEntities)
@@ -531,10 +576,10 @@ public class DrillCadToolService
                 switch (entity)
                 {
                     case DBText dbText when gridRegex.IsMatch(dbText.TextString.Trim()):
-                        gridPoints.Add((dbText.TextString.Trim(), dbText.Position));
+                        gridPoints.Add(new LabeledPoint(dbText.TextString.Trim(), dbText.Position));
                         break;
                     case MText mText when gridRegex.IsMatch(mText.Contents.Trim()):
-                        gridPoints.Add((mText.Contents.Trim(), mText.Location));
+                        gridPoints.Add(new LabeledPoint(mText.Contents.Trim(), mText.Location));
                         break;
                 }
             }
@@ -614,8 +659,10 @@ public class DrillCadToolService
                     document.SendStringToExecute("DIMPERP ", true, false, false);
                 }
 
-                foreach (var (label, point) in gridPoints)
+                foreach (var gridPoint in gridPoints)
                 {
+                    var label = gridPoint.Label;
+                    var point = gridPoint.Point;
                     Curve? northSouth = null;
                     Curve? eastWest = null;
                     Point3d northSouthClosest = Point3d.Origin;
@@ -804,25 +851,28 @@ public class DrillCadToolService
                     return false;
                 }
 
-                (bool Ok, char Letter, int Number) ParseTag(string tag)
+                bool TryParseTag(string tag, out char letter, out int number)
                 {
+                    letter = '\0';
+                    number = 0;
+
                     if (string.IsNullOrWhiteSpace(tag) || tag.Length < 2)
                     {
-                        return (false, '\0', 0);
+                        return false;
                     }
 
-                    var letter = char.ToUpperInvariant(tag[0]);
+                    letter = char.ToUpperInvariant(tag[0]);
                     if (letter < 'A' || letter > 'Z')
                     {
-                        return (false, '\0', 0);
+                        return false;
                     }
 
-                    if (!int.TryParse(tag.Substring(1), NumberStyles.Integer, CultureInfo.InvariantCulture, out var number))
+                    if (!int.TryParse(tag.Substring(1), NumberStyles.Integer, CultureInfo.InvariantCulture, out number))
                     {
-                        return (false, '\0', 0);
+                        return false;
                     }
 
-                    return (true, letter, number);
+                    return true;
                 }
 
                 char? ExtractDirectionLetter(string? cellText)
@@ -893,7 +943,13 @@ public class DrillCadToolService
 
                 // Available letters in the drawing (A, B, C...) – used to map each SURFACE..BOTTOM HOLE block.
                 var lettersAvailable = drillPointByTag.Keys
-                    .Select(t => ParseTag(t))
+                    .Select(tag =>
+                    {
+                        char letter;
+                        int number;
+                        var ok = TryParseTag(tag, out letter, out number);
+                        return new { Ok = ok, Letter = letter };
+                    })
                     .Where(p => p.Ok)
                     .Select(p => p.Letter)
                     .Distinct()
@@ -955,10 +1011,16 @@ public class DrillCadToolService
                 if (groups.Count == 0)
                 {
                     var orderedTags = drillPointByTag.Keys
-                        .Select(t => new { Tag = t, Parsed = ParseTag(t) })
-                        .Where(x => x.Parsed.Ok)
-                        .OrderBy(x => x.Parsed.Letter)
-                        .ThenBy(x => x.Parsed.Number)
+                        .Select(tag =>
+                        {
+                            char letter;
+                            int number;
+                            var ok = TryParseTag(tag, out letter, out number);
+                            return new { Tag = tag, Ok = ok, Letter = letter, Number = number };
+                        })
+                        .Where(x => x.Ok)
+                        .OrderBy(x => x.Letter)
+                        .ThenBy(x => x.Number)
                         .Select(x => x.Tag)
                         .ToList();
 
@@ -1433,9 +1495,9 @@ public class DrillCadToolService
         return Path.Combine(directory, $"{drawingName}_CheckReport.txt");
     }
 
-    private List<(string Label, double Northing, double Easting)> ReadGridPoints(Database database)
+    private List<GridPointCoordinate> ReadGridPoints(Database database)
     {
-        var results = new List<(string Label, double Northing, double Easting)>();
+        var results = new List<GridPointCoordinate>();
 
         using (var transaction = database.TransactionManager.StartTransaction())
         {
@@ -1450,10 +1512,10 @@ public class DrillCadToolService
                     switch (entity)
                     {
                         case DBText text when DrillParsers.IsGridLabel(text.TextString):
-                            results.Add((text.TextString.Trim(), text.Position.Y, text.Position.X));
+                            results.Add(new GridPointCoordinate(text.TextString.Trim(), text.Position.Y, text.Position.X));
                             break;
                         case MText mText when DrillParsers.IsGridLabel(mText.Contents):
-                            results.Add((mText.Contents.Trim(), mText.Location.Y, mText.Location.X));
+                            results.Add(new GridPointCoordinate(mText.Contents.Trim(), mText.Location.Y, mText.Location.X));
                             break;
                     }
                 }
@@ -1465,9 +1527,9 @@ public class DrillCadToolService
         return results;
     }
 
-    private static List<(int Row, int Column)> FindSurfaceCells(Table table)
+    private static List<TableCellLocation> FindSurfaceCells(Table table)
     {
-        var cells = new List<(int Row, int Column)>();
+        var cells = new List<TableCellLocation>();
         for (var row = 0; row < table.Rows.Count; row++)
         {
             for (var column = 0; column < table.Columns.Count; column++)
@@ -1475,7 +1537,7 @@ public class DrillCadToolService
                 var text = table.Cells[row, column].TextString.Trim().ToUpperInvariant();
                 if (text.Contains("SURFACE"))
                 {
-                    cells.Add((row, column));
+                    cells.Add(new TableCellLocation(row, column));
                 }
             }
         }
@@ -1576,11 +1638,12 @@ public class DrillCadToolService
             return string.Empty;
         }
 
+        var headingArgument = GetCordsHeadingArgument(heading);
         var processExe = FindCordsExecutable();
         if (!string.IsNullOrEmpty(processExe))
         {
-            _log.Info($"Running: {processExe} \"{csvPath}\" \"{heading}\"");
-            var startInfo = new ProcessStartInfo(processExe, $"\"{csvPath}\" \"{heading}\"")
+            _log.Info($"Running: {processExe} \"{csvPath}\" \"{headingArgument}\"");
+            var startInfo = new ProcessStartInfo(processExe, $"\"{csvPath}\" \"{headingArgument}\"")
             {
                 UseShellExecute = false,
                 CreateNoWindow = true,
@@ -1668,14 +1731,11 @@ public class DrillCadToolService
         using (var package = new ExcelPackage(new FileInfo(excelFilePath)))
         {
             var worksheet = package.Workbook.Worksheets.First();
-            var dimension = GetWorksheetDimension(worksheet);
-            if (dimension == null)
+            if (!TryGetWorksheetDimension(worksheet, out var startRow, out var startColumn, out var endRow, out var endColumn))
             {
                 ShowAlert("The Excel file is empty.");
                 return null;
             }
-
-            var (startRow, startColumn, endRow, endColumn) = dimension.Value;
             var lastRow = endRow;
             for (var row = endRow; row >= startRow; row--)
             {
@@ -1711,24 +1771,36 @@ public class DrillCadToolService
         }
     }
 
-    private static (int StartRow, int StartColumn, int EndRow, int EndColumn)? GetWorksheetDimension(ExcelWorksheet worksheet)
+    private static bool TryGetWorksheetDimension(
+        ExcelWorksheet worksheet,
+        out int startRow,
+        out int startColumn,
+        out int endRow,
+        out int endColumn)
     {
+        startRow = 0;
+        startColumn = 0;
+        endRow = 0;
+        endColumn = 0;
+
         if (worksheet == null)
         {
-            return null;
+            return false;
         }
 
         var dimensionProperty = worksheet.GetType().GetProperty("Dimension");
         if (dimensionProperty?.GetValue(worksheet) is ExcelAddressBase dimension && dimension.Start != null && dimension.End != null)
         {
-            return (dimension.Start.Row, dimension.Start.Column, dimension.End.Row, dimension.End.Column);
+            startRow = dimension.Start.Row;
+            startColumn = dimension.Start.Column;
+            endRow = dimension.End.Row;
+            endColumn = dimension.End.Column;
+            return true;
         }
 
         var hasValues = false;
-        var startRow = int.MaxValue;
-        var startColumn = int.MaxValue;
-        var endRow = 0;
-        var endColumn = 0;
+        startRow = int.MaxValue;
+        startColumn = int.MaxValue;
 
         foreach (var cell in worksheet.Cells)
         {
@@ -1752,10 +1824,14 @@ public class DrillCadToolService
 
         if (!hasValues)
         {
-            return null;
+            startRow = 0;
+            startColumn = 0;
+            endRow = 0;
+            endColumn = 0;
+            return false;
         }
 
-        return (startRow, startColumn, endRow, endColumn);
+        return true;
     }
 
     private void AdjustTableForClient(string[,] tableData, string heading)
@@ -1765,7 +1841,7 @@ public class DrillCadToolService
             return;
         }
 
-        var headingValue = string.Equals(heading, "HEEL", StringComparison.OrdinalIgnoreCase) ? "HEEL" : "ICP";
+        var headingValue = NormalizeHeadingLabel(heading);
         for (var row = 0; row < tableData.GetLength(0); row++)
         {
             for (var column = 0; column < tableData.GetLength(1); column++)
@@ -1776,14 +1852,7 @@ public class DrillCadToolService
                     continue;
                 }
 
-                if (headingValue == "HEEL" && cellText.IndexOf("ICP", StringComparison.OrdinalIgnoreCase) >= 0)
-                {
-                    tableData[row, column] = Regex.Replace(cellText, "ICP", "HEEL", RegexOptions.IgnoreCase);
-                }
-                else if (headingValue == "ICP" && cellText.IndexOf("HEEL", StringComparison.OrdinalIgnoreCase) >= 0)
-                {
-                    tableData[row, column] = Regex.Replace(cellText, "HEEL", "ICP", RegexOptions.IgnoreCase);
-                }
+                tableData[row, column] = HeadingLabelRegex.Replace(cellText, headingValue);
             }
         }
 
@@ -1903,6 +1972,29 @@ public class DrillCadToolService
                 tableData[row, 0] = "SURFACE";
             }
         }
+    }
+
+    private static string NormalizeHeadingLabel(string? heading)
+    {
+        if (string.IsNullOrWhiteSpace(heading))
+        {
+            return "ICP";
+        }
+
+        return heading.Trim().ToUpperInvariant() switch
+        {
+            "HEEL" => "HEEL",
+            "LANDING" => "LANDING",
+            _ => "ICP"
+        };
+    }
+
+    private static string GetCordsHeadingArgument(string? heading)
+    {
+        // Preserve the existing non-HEEL export path when LANDING is selected in the UI.
+        return string.Equals(NormalizeHeadingLabel(heading), "HEEL", StringComparison.Ordinal)
+            ? "HEEL"
+            : "ICP";
     }
 
     private bool InsertTablePipeline(Document document, string[,] tableData)

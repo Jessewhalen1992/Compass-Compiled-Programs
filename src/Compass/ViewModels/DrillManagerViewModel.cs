@@ -31,7 +31,7 @@ public class DrillManagerViewModel : INotifyPropertyChanged
     private readonly DrillAttributeSyncService _drillAttributeSyncService;
     private readonly DrillCadToolService _drillCadToolService;
     private readonly string[] _committedNames = new string[MaximumDrills];
-    private static readonly string[] HeadingChoices = { "ICP", "HEEL" };
+    private static readonly string[] HeadingChoices = { "ICP", "HEEL", "LANDING" };
     private int _stateChangeSuppressionCount;
     private bool _stateChangePending;
 

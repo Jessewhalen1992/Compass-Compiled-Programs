@@ -71,7 +71,10 @@
   <ItemGroup>
     <!-- Logging -->
     <PackageReference Include="NLog" Version="5.5.0" />
-    <!-- Fody weaving and Costura for embedding dependencies. Specify explicit versions to satisfy NU1604 -->
+  </ItemGroup>
+
+  <!-- Fody weaving is only enabled for modern targets. The net45 build needs plain local DLLs. -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'net48'">
     <PackageReference Include="Fody" Version="6.9.3" PrivateAssets="all" />
     <PackageReference Include="Costura.Fody" Version="6.0.0" PrivateAssets="all" />
   </ItemGroup>
@@ -107,8 +110,6 @@
   <ItemGroup Condition="'$(TargetFramework)' == 'net45'">
     <!-- Use a safe version of Newtonsoft.Json that supports .NET Framework 4.5 and fixes CVE-2024-21907 -->
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
-    <!-- Add System.ValueTuple to provide C# 7 tuple support on .NET 4.5 -->
-    <PackageReference Include="System.ValueTuple" Version="4.5.0" />
     <!-- Older EPPlus version compatible with .NET 4.5 -->
     <PackageReference Include="EPPlus" Version="4.5.3.3" />
   </ItemGroup>
@@ -135,4 +136,31 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net45'">
+    <Map3D2015BundleFiles Include="$(TargetPath)" />
+    <Map3D2015BundleFiles Include="$(TargetDir)EPPlus.dll" />
+    <Map3D2015BundleFiles Include="$(TargetDir)Newtonsoft.Json.dll" />
+    <Map3D2015BundleFiles Include="$(TargetDir)NLog.dll" />
+    <Map3D2015BundleFiles Include="$(TargetDir)NLog.config" />
+    <Map3D2015BundleFiles Include="$(TargetDir)appsettings.json" />
+  </ItemGroup>
+
+  <Target Name="CreateMap3D2015Bundle" AfterTargets="Build" Condition="'$(TargetFramework)' == 'net45'">
+    <PropertyGroup>
+      <Map3D2015BundleRoot>$(MSBuildProjectDirectory)\bin\$(Configuration)\CompassMap3D2015.bundle</Map3D2015BundleRoot>
+      <Map3D2015BundleContents>$(Map3D2015BundleRoot)\Contents\Win64</Map3D2015BundleContents>
+      <Map3D2015BundleManifest>$(MSBuildProjectDirectory)\Deployment\Map3D2015\PackageContents.xml</Map3D2015BundleManifest>
+    </PropertyGroup>
+
+    <MakeDir Directories="$(Map3D2015BundleContents)" />
+    <Copy
+      SourceFiles="$(Map3D2015BundleManifest)"
+      DestinationFiles="$(Map3D2015BundleRoot)\PackageContents.xml"
+      SkipUnchangedFiles="true" />
+    <Copy
+      SourceFiles="@(Map3D2015BundleFiles)"
+      DestinationFolder="$(Map3D2015BundleContents)"
+      SkipUnchangedFiles="true" />
+  </Target>
 </Project>

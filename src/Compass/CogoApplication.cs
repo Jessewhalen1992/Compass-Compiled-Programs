@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.Runtime;
+using Compass.Infrastructure;
 using Compass.Modules;
 using Compass.UI;
 using Compass.ViewModels;
@@ -45,8 +46,19 @@ public class CogoApplication : IExtensionApplication
     [CommandMethod("Ccogo", CommandFlags.Modal | CommandFlags.Session)]
     public static void ShowCogo()
     {
-        EnsurePalette();
-        UnifiedPaletteHost.ShowPalette("COGO");
+        CompassStartupDiagnostics.Log("Ccogo command invoked.");
+
+        try
+        {
+            EnsurePalette();
+            UnifiedPaletteHost.ShowPalette("COGO");
+            CompassStartupDiagnostics.Log("Ccogo command completed.");
+        }
+        catch (System.Exception ex)
+        {
+            CompassStartupDiagnostics.LogException("Ccogo command", ex);
+            Application.ShowAlertDialog("COGO failed to start. See " + CompassStartupDiagnostics.LogPath);
+        }
     }
 
     private static void EnsurePalette()
@@ -167,11 +179,44 @@ public class CogoApplication : IExtensionApplication
         }
     }
 
-    private abstract record CogoToolDefinition(string Id, string DisplayName, string Description);
+    private abstract class CogoToolDefinition
+    {
+        protected CogoToolDefinition(string id, string displayName, string description)
+        {
+            Id = id;
+            DisplayName = displayName;
+            Description = description;
+        }
 
-    private sealed record ManagedModuleTool(string Id, string DisplayName, string Description, ICompassModule Module)
-        : CogoToolDefinition(Id, DisplayName, Description);
+        public string Id { get; }
 
-    private sealed record LispToolDefinition(string Id, string DisplayName, string Description, string RelativePath, string CommandName)
-        : CogoToolDefinition(Id, DisplayName, Description);
+        public string DisplayName { get; }
+
+        public string Description { get; }
+    }
+
+    private sealed class ManagedModuleTool : CogoToolDefinition
+    {
+        public ManagedModuleTool(string id, string displayName, string description, ICompassModule module)
+            : base(id, displayName, description)
+        {
+            Module = module;
+        }
+
+        public ICompassModule Module { get; }
+    }
+
+    private sealed class LispToolDefinition : CogoToolDefinition
+    {
+        public LispToolDefinition(string id, string displayName, string description, string relativePath, string commandName)
+            : base(id, displayName, description)
+        {
+            RelativePath = relativePath;
+            CommandName = commandName;
+        }
+
+        public string RelativePath { get; }
+
+        public string CommandName { get; }
+    }
 }

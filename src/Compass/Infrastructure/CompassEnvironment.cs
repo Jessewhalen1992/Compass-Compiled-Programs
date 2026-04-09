@@ -27,26 +27,39 @@ public static class CompassEnvironment
 
     private static void RegisterCodePageEncodings()
     {
-        // Look for Encoding.RegisterProvider via reflection; this method is only
-        // present in .NET 4.6+.  Skip registration on .NET 4.5.
-        var registerProvider = typeof(Encoding).GetMethod(
-            "RegisterProvider",
-            BindingFlags.Public | BindingFlags.Static);
-
-        if (registerProvider != null)
+        try
         {
-            // Load System.Text.CodePagesEncodingProvider from System.Text.Encoding.CodePages
+            // Look for Encoding.RegisterProvider via reflection; this method is only
+            // present in .NET 4.6+. Skip registration on older runtimes.
+            var registerProvider = typeof(Encoding).GetMethod(
+                "RegisterProvider",
+                BindingFlags.Public | BindingFlags.Static);
+
+            if (registerProvider == null)
+            {
+                return;
+            }
+
+            // Best effort only. Some AutoCAD 2015 machines won't have this assembly.
             var providerType = Type.GetType(
-                "System.Text.CodePagesEncodingProvider, System.Text.Encoding.CodePages");
+                "System.Text.CodePagesEncodingProvider, System.Text.Encoding.CodePages",
+                throwOnError: false);
             var instanceProp = providerType?.GetProperty(
                 "Instance",
                 BindingFlags.Public | BindingFlags.Static);
             var providerInstance = instanceProp?.GetValue(null);
-            if (providerInstance != null)
+            if (providerInstance == null)
             {
-                // Call Encoding.RegisterProvider(providerInstance)
-                registerProvider.Invoke(null, new[] { providerInstance });
+                CompassStartupDiagnostics.Log("System.Text.Encoding.CodePages not available; continuing without code page provider.");
+                return;
             }
+
+            registerProvider.Invoke(null, new[] { providerInstance });
+            CompassStartupDiagnostics.Log("Registered code page encoding provider.");
+        }
+        catch (Exception ex)
+        {
+            CompassStartupDiagnostics.LogException("RegisterCodePageEncodings", ex);
         }
     }
 

@@ -11,8 +11,21 @@ using AutoCADApplication = Autodesk.AutoCAD.ApplicationServices.Application;
 
 namespace Compass.Services;
 
-public record DrillUpdateResult(bool Success, int UpdatedAttributes, int MatchingUpdates)
+public sealed class DrillUpdateResult
 {
+    public DrillUpdateResult(bool success, int updatedAttributes, int matchingUpdates)
+    {
+        Success = success;
+        UpdatedAttributes = updatedAttributes;
+        MatchingUpdates = matchingUpdates;
+    }
+
+    public bool Success { get; }
+
+    public int UpdatedAttributes { get; }
+
+    public int MatchingUpdates { get; }
+
     public static DrillUpdateResult Failed() => new(false, 0, 0);
 }
 

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Windows.Controls;
 using Autodesk.AutoCAD.Runtime;
 using Autodesk.AutoCAD.Windows;
+using Compass.Infrastructure;
 
 [assembly: CommandClass(typeof(Compass.UnifiedPaletteHost))]
 
@@ -29,6 +30,7 @@ namespace Compass
         {
             if (_mainPalette != null) return;
 
+            CompassStartupDiagnostics.Log("Creating unified Compass palette.");
             _mainPalette = new PaletteSet("Compass", new Guid("c833fa27-9db1-4d67-85d4-45115ac0a2c2"))
             {
                 Style = PaletteSetStyles.ShowCloseButton | PaletteSetStyles.ShowPropertiesMenu | PaletteSetStyles.Snappable,
@@ -44,8 +46,8 @@ namespace Compass
             if (_mainPalette == null || TabIndices.ContainsKey(name)) return false;
 
             _mainPalette.AddVisual(name, control);
-            // Use Count instead of PaletteCount; Count is the number of palettes in the set
             TabIndices[name] = _mainPalette.Count - 1;
+            CompassStartupDiagnostics.Log("Added palette tab '" + name + "'.");
             return true;
         }
 
@@ -55,6 +57,7 @@ namespace Compass
             if (_mainPalette == null) return;
 
             _mainPalette.Visible = true;
+            CompassStartupDiagnostics.Log("Showing palette. Requested tab: " + (tabName ?? "<default>"));
             if (!string.IsNullOrWhiteSpace(tabName) && TabIndices.TryGetValue(tabName, out var index))
             {
                 _mainPalette.Activate(index);

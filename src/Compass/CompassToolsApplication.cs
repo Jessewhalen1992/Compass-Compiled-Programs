@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.Runtime;
+using Compass.Infrastructure;
 using Compass.UI;
 using Compass.ViewModels;
 
@@ -35,7 +36,6 @@ public class CompassToolsApplication : IExtensionApplication
 
     public void Initialize()
     {
-        // Preload the Compass Tools palette during initialization so the tab is available immediately
         EnsurePalette();
     }
 
@@ -51,8 +51,19 @@ public class CompassToolsApplication : IExtensionApplication
     [CommandMethod("Ctools", CommandFlags.Modal | CommandFlags.Session)]
     public static void ShowCompassTools()
     {
-        EnsurePalette();
-        UnifiedPaletteHost.ShowPalette("Tools");
+        CompassStartupDiagnostics.Log("Ctools command invoked.");
+
+        try
+        {
+            EnsurePalette();
+            UnifiedPaletteHost.ShowPalette("Tools");
+            CompassStartupDiagnostics.Log("Ctools command completed.");
+        }
+        catch (System.Exception ex)
+        {
+            CompassStartupDiagnostics.LogException("Ctools command", ex);
+            Application.ShowAlertDialog("Compass Tools failed to start. See " + CompassStartupDiagnostics.LogPath);
+        }
     }
 
     private static void EnsurePalette()
@@ -164,5 +175,25 @@ public class CompassToolsApplication : IExtensionApplication
         }
     }
 
-    private record LispToolDefinition(string Id, string DisplayName, string Description, string RelativePath, string CommandName);
+    private sealed class LispToolDefinition
+    {
+        public LispToolDefinition(string id, string displayName, string description, string relativePath, string commandName)
+        {
+            Id = id;
+            DisplayName = displayName;
+            Description = description;
+            RelativePath = relativePath;
+            CommandName = commandName;
+        }
+
+        public string Id { get; }
+
+        public string DisplayName { get; }
+
+        public string Description { get; }
+
+        public string RelativePath { get; }
+
+        public string CommandName { get; }
+    }
 }

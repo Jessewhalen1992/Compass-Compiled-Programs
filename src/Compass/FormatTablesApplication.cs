@@ -1,7 +1,8 @@
-﻿using System;
+using System;
 using System.Linq;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.Runtime;
+using Compass.Infrastructure;
 using Compass.UI;
 using Compass.ViewModels;
 
@@ -39,7 +40,6 @@ public class FormatTablesApplication : IExtensionApplication
 
     public void Initialize()
     {
-        // Preload the Format Tables palette during initialization so the tab is ready when needed
         EnsurePalette();
     }
 
@@ -55,8 +55,19 @@ public class FormatTablesApplication : IExtensionApplication
     [CommandMethod("Cformat", CommandFlags.Modal | CommandFlags.Session)]
     public static void ShowFormatTables()
     {
-        EnsurePalette();
-        UnifiedPaletteHost.ShowPalette("Format Tables");
+        CompassStartupDiagnostics.Log("Cformat command invoked.");
+
+        try
+        {
+            EnsurePalette();
+            UnifiedPaletteHost.ShowPalette("Format Tables");
+            CompassStartupDiagnostics.Log("Cformat command completed.");
+        }
+        catch (System.Exception ex)
+        {
+            CompassStartupDiagnostics.LogException("Cformat command", ex);
+            Application.ShowAlertDialog("Format Tables failed to start. See " + CompassStartupDiagnostics.LogPath);
+        }
     }
 
     private static void EnsurePalette()
@@ -100,12 +111,26 @@ public class FormatTablesApplication : IExtensionApplication
             return;
         }
 
-        // Cancel any in‑progress command
         document.SendStringToExecute("\u001B\u001B", true, false, false);
-
-        // Send the macro (e.g., ^C^Csift) and terminate with an actual newline
         document.SendStringToExecute($"{tool.Macro}\n", true, false, false);
     }
 
-    private record MacroToolDefinition(string Id, string DisplayName, string Description, string Macro);
+    private sealed class MacroToolDefinition
+    {
+        public MacroToolDefinition(string id, string displayName, string description, string macro)
+        {
+            Id = id;
+            DisplayName = displayName;
+            Description = description;
+            Macro = macro;
+        }
+
+        public string Id { get; }
+
+        public string DisplayName { get; }
+
+        public string Description { get; }
+
+        public string Macro { get; }
+    }
 }

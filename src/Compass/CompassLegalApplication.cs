@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.Runtime;
+using Compass.Infrastructure;
 using Compass.UI;
 using Compass.ViewModels;
 
@@ -40,8 +41,19 @@ public class CompassLegalApplication : IExtensionApplication
     [CommandMethod("Clegal", CommandFlags.Modal | CommandFlags.Session)]
     public static void ShowCompassLegal()
     {
-        EnsurePalette();
-        UnifiedPaletteHost.ShowPalette("Legal");
+        CompassStartupDiagnostics.Log("Clegal command invoked.");
+
+        try
+        {
+            EnsurePalette();
+            UnifiedPaletteHost.ShowPalette("Legal");
+            CompassStartupDiagnostics.Log("Clegal command completed.");
+        }
+        catch (System.Exception ex)
+        {
+            CompassStartupDiagnostics.LogException("Clegal command", ex);
+            Application.ShowAlertDialog("Compass Legal failed to start. See " + CompassStartupDiagnostics.LogPath);
+        }
     }
 
     private static void EnsurePalette()
@@ -135,5 +147,25 @@ public class CompassLegalApplication : IExtensionApplication
         catch { /* Non‑fatal: user can add trusted paths manually */ }
     }
 
-    private sealed record LispToolDefinition(string Id, string DisplayName, string Description, string BaseFileName, string CommandName);
+    private sealed class LispToolDefinition
+    {
+        public LispToolDefinition(string id, string displayName, string description, string baseFileName, string commandName)
+        {
+            Id = id;
+            DisplayName = displayName;
+            Description = description;
+            BaseFileName = baseFileName;
+            CommandName = commandName;
+        }
+
+        public string Id { get; }
+
+        public string DisplayName { get; }
+
+        public string Description { get; }
+
+        public string BaseFileName { get; }
+
+        public string CommandName { get; }
+    }
 }
